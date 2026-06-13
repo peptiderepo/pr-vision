@@ -2,20 +2,20 @@
 declare(strict_types=1);
 
 /**
- * Class and interface autoloader for the Peptide GEO Monitor plugin.
+ * Class and interface autoloader for the PR Vision plugin.
  *
- * Converts PGM_* class/interface names to file paths under includes/.
+ * Converts PRV_* class/interface names to file paths under includes/.
  * Naming conventions:
- *   PGM_Foo_Bar (class)      → class-pgm-foo-bar.php
- *   PGM_Foo_Bar (interface)  → interface-pgm-foo-bar.php (tried second)
+ *   PRV_Foo_Bar (class)      → class-prv-foo-bar.php
+ *   PRV_Foo_Bar (interface)  → interface-prv-foo-bar.php (tried second)
  *
- * Who triggers: Plugin boot (peptide-geo-monitor.php) — called once before
- *               any PGM_* class or interface is instantiated.
+ * Who triggers: Plugin boot (pr-vision.php) — called once before
+ *               any PRV_* class or interface is instantiated.
  * Dependencies: None (pure PHP).
  *
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Autoloader {
+class PRV_Autoloader {
 
 	/**
 	 * Register the autoloader with the SPL stack.
@@ -27,7 +27,7 @@ class PGM_Autoloader {
 	}
 
 	/**
-	 * Attempt to load a PGM_* class or interface file.
+	 * Attempt to load a PRV_* class or interface file.
 	 *
 	 * Walks the known include subdirectories in order, trying the class-
 	 * filename first and the interface-filename second.
@@ -39,18 +39,18 @@ class PGM_Autoloader {
 	 * @return void
 	 */
 	public static function load( string $class_name ): void {
-		if ( 0 !== strpos( $class_name, 'PGM_' ) ) {
+		if ( 0 !== strpos( $class_name, 'PRV_' ) ) {
 			return;
 		}
 
 		$slug = strtolower( str_replace( '_', '-', $class_name ) );
 
 		$search_dirs = array(
-			PGM_PLUGIN_DIR . 'includes/core/',
-			PGM_PLUGIN_DIR . 'includes/providers/',
-			PGM_PLUGIN_DIR . 'includes/collector/',
-			PGM_PLUGIN_DIR . 'includes/panel/',
-			PGM_PLUGIN_DIR . 'includes/',
+			PRV_PLUGIN_DIR . 'includes/core/',
+			PRV_PLUGIN_DIR . 'includes/providers/',
+			PRV_PLUGIN_DIR . 'includes/collector/',
+			PRV_PLUGIN_DIR . 'includes/panel/',
+			PRV_PLUGIN_DIR . 'includes/',
 		);
 
 		// Try class file first, then interface file.

@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name: Peptide GEO Monitor
+ * Plugin Name: PR Vision
  * Plugin URI:  https://peptiderepo.com
  * Description: Weekly server-side LLM probes for AI-visibility (GEO) tracking. Records whether peptiderepo.com is cited by LLMs across core peptides, stores time-series, and renders an admin trendline + standings table.
- * Version:     0.1.0
+ * Version:     0.1.1
  * Author:      peptiderepo
  * Author URI:  https://peptiderepo.com
  * License:     GPL-2.0-or-later
- * Text Domain: peptide-geo-monitor
+ * Text Domain: pr-vision
  * Requires PHP: 8.1
  *
  * @see ARCHITECTURE.md — Full data flow and file tree.
@@ -23,46 +23,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /* ── Constants ────────────────────────────────────────────────────────── */
 
-define( 'PGM_VERSION', '0.1.0' );
-define( 'PGM_PLUGIN_FILE', __FILE__ );
-define( 'PGM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'PGM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'PGM_SCHEMA_VERSION', 1 );
+define( 'PRV_VERSION', '0.1.1' );
+define( 'PRV_PLUGIN_FILE', __FILE__ );
+define( 'PRV_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'PRV_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'PRV_SCHEMA_VERSION', 1 );
 
 /** @var int Maximum HTTP retries for LLM API calls. */
-define( 'PGM_MAX_RETRIES', 3 );
+define( 'PRV_MAX_RETRIES', 3 );
 
 /** @var int API request timeout in seconds. */
-define( 'PGM_API_TIMEOUT_SECONDS', 60 );
+define( 'PRV_API_TIMEOUT_SECONDS', 60 );
 
 /** @var int Base backoff delay (seconds) between retries. */
-define( 'PGM_RETRY_BASE_DELAY_SECONDS', 2 );
+define( 'PRV_RETRY_BASE_DELAY_SECONDS', 2 );
 
 /** @var float Default monthly budget cap in USD. */
-define( 'PGM_DEFAULT_MONTHLY_BUDGET_USD', 5.0 );
+define( 'PRV_DEFAULT_MONTHLY_BUDGET_USD', 5.0 );
 
 /** @var string WP-Cron hook name for the weekly probe run. */
-define( 'PGM_CRON_HOOK', 'pgm_weekly_probe' );
+define( 'PRV_CRON_HOOK', 'prv_weekly_probe' );
 
 /** @var string The site we are tracking citations for. */
-define( 'PGM_TARGET_DOMAIN', 'peptiderepo.com' );
+define( 'PRV_TARGET_DOMAIN', 'peptiderepo.com' );
 
 /* ── Autoloader ───────────────────────────────────────────────────────── */
 
-require_once PGM_PLUGIN_DIR . 'includes/core/class-pgm-autoloader.php';
-PGM_Autoloader::register();
+require_once PRV_PLUGIN_DIR . 'includes/core/class-prv-autoloader.php';
+PRV_Autoloader::register();
 
 /* ── Activation / Deactivation ────────────────────────────────────────── */
 
-register_activation_hook( __FILE__, array( 'PGM_Activator', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'PGM_Deactivator', 'deactivate' ) );
+register_activation_hook( __FILE__, array( 'PRV_Activator', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'PRV_Deactivator', 'deactivate' ) );
 
 /* ── Boot ──────────────────────────────────────────────────────────────── */
 
 add_action(
 	'plugins_loaded',
 	static function (): void {
-		$plugin = new PGM_Plugin();
+		$plugin = new PRV_Plugin();
 		$plugin->init();
 	}
 );

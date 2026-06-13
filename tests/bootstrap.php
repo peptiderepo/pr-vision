@@ -5,7 +5,7 @@
  *
  * Pattern mirrors peptide-repo-core's bootstrap (flat PHP, no PHPUnit).
  *
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
 
 declare(strict_types=1);
@@ -16,21 +16,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
 
-define( 'PGM_VERSION', '0.1.0' );
-define( 'PGM_PLUGIN_FILE', __DIR__ . '/../peptide-geo-monitor.php' );
-define( 'PGM_PLUGIN_DIR', realpath( __DIR__ . '/..' ) . '/' );
-define( 'PGM_PLUGIN_URL', 'http://example.test/wp-content/plugins/peptide-geo-monitor/' );
-define( 'PGM_SCHEMA_VERSION', 1 );
-define( 'PGM_MAX_RETRIES', 3 );
-define( 'PGM_API_TIMEOUT_SECONDS', 60 );
-define( 'PGM_RETRY_BASE_DELAY_SECONDS', 2 );
-define( 'PGM_DEFAULT_MONTHLY_BUDGET_USD', 5.0 );
-define( 'PGM_CRON_HOOK', 'pgm_weekly_probe' );
-define( 'PGM_TARGET_DOMAIN', 'peptiderepo.com' );
+define( 'PRV_VERSION', '0.1.1' );
+define( 'PRV_PLUGIN_FILE', __DIR__ . '/../pr-vision.php' );
+define( 'PRV_PLUGIN_DIR', realpath( __DIR__ . '/..' ) . '/' );
+define( 'PRV_PLUGIN_URL', 'http://example.test/wp-content/plugins/pr-vision/' );
+define( 'PRV_SCHEMA_VERSION', 1 );
+define( 'PRV_MAX_RETRIES', 3 );
+define( 'PRV_API_TIMEOUT_SECONDS', 60 );
+define( 'PRV_RETRY_BASE_DELAY_SECONDS', 2 );
+define( 'PRV_DEFAULT_MONTHLY_BUDGET_USD', 5.0 );
+define( 'PRV_CRON_HOOK', 'prv_weekly_probe' );
+define( 'PRV_TARGET_DOMAIN', 'peptiderepo.com' );
 
 /* ── Global test state ─────────────────────────────────────────────────── */
 
-$GLOBALS['pgm_test_state'] = [
+$GLOBALS['prv_test_state'] = [
 	'options'        => [],
 	'actions'        => [],
 	'wpdb_insert_id' => 1,
@@ -40,8 +40,8 @@ $GLOBALS['pgm_test_state'] = [
 	'remote_posts'   => [],
 ];
 
-function pgm_test_reset(): void {
-	$GLOBALS['pgm_test_state'] = [
+function prv_test_reset(): void {
+	$GLOBALS['prv_test_state'] = [
 		'options'        => [],
 		'actions'        => [],
 		'wpdb_insert_id' => 1,
@@ -50,29 +50,29 @@ function pgm_test_reset(): void {
 		'cron_events'    => [],
 		'remote_posts'   => [],
 	];
-	PGM_Collector_Registry::reset_for_testing();
+	PRV_Collector_Registry::reset_for_testing();
 }
 
 /* ── WordPress function stubs ──────────────────────────────────────────── */
 
 function get_option( string $name, $default = false ) {
-	return $GLOBALS['pgm_test_state']['options'][ $name ] ?? $default;
+	return $GLOBALS['prv_test_state']['options'][ $name ] ?? $default;
 }
 
 function update_option( string $name, $value ): bool {
-	$GLOBALS['pgm_test_state']['options'][ $name ] = $value;
+	$GLOBALS['prv_test_state']['options'][ $name ] = $value;
 	return true;
 }
 
 function add_option( string $name, $value = '' ): bool {
-	if ( ! isset( $GLOBALS['pgm_test_state']['options'][ $name ] ) ) {
-		$GLOBALS['pgm_test_state']['options'][ $name ] = $value;
+	if ( ! isset( $GLOBALS['prv_test_state']['options'][ $name ] ) ) {
+		$GLOBALS['prv_test_state']['options'][ $name ] = $value;
 	}
 	return true;
 }
 
 function add_action( string $hook, $callback, int $priority = 10, int $accepted_args = 1 ): bool {
-	$GLOBALS['pgm_test_state']['actions'][] = compact( 'hook', 'callback', 'priority' );
+	$GLOBALS['prv_test_state']['actions'][] = compact( 'hook', 'callback', 'priority' );
 	return true;
 }
 
@@ -83,19 +83,19 @@ function remove_action( string $hook, $callback, int $priority = 10 ): bool {
 function add_menu_page( ...$args ): void {}
 
 function wp_schedule_event( int $timestamp, string $recurrence, string $hook ): void {
-	$GLOBALS['pgm_test_state']['cron_events'][ $hook ] = $timestamp;
+	$GLOBALS['prv_test_state']['cron_events'][ $hook ] = $timestamp;
 }
 
 function wp_next_scheduled( string $hook ) {
-	return $GLOBALS['pgm_test_state']['cron_events'][ $hook ] ?? false;
+	return $GLOBALS['prv_test_state']['cron_events'][ $hook ] ?? false;
 }
 
 function wp_unschedule_event( int $timestamp, string $hook ): void {
-	unset( $GLOBALS['pgm_test_state']['cron_events'][ $hook ] );
+	unset( $GLOBALS['prv_test_state']['cron_events'][ $hook ] );
 }
 
 function wp_clear_scheduled_hook( string $hook ): void {
-	unset( $GLOBALS['pgm_test_state']['cron_events'][ $hook ] );
+	unset( $GLOBALS['prv_test_state']['cron_events'][ $hook ] );
 }
 
 function wp_rand( int $min = 0, int $max = 0 ): int {
@@ -180,7 +180,7 @@ function is_wp_error( $thing ): bool {
 
 function wp_remote_post( string $url, array $args = array() ) {
 	// Return from test queue if set, else a generic success.
-	$queue = &$GLOBALS['pgm_test_state']['remote_posts'];
+	$queue = &$GLOBALS['prv_test_state']['remote_posts'];
 	if ( ! empty( $queue ) ) {
 		return array_shift( $queue );
 	}
@@ -220,17 +220,17 @@ class stdClass_wpdb {
 	}
 	public function query( string $sql ): bool { return true; }
 	public function insert( string $table, array $data, array $format = [] ): int {
-		$this->insert_id = $GLOBALS['pgm_test_state']['wpdb_insert_id']++;
+		$this->insert_id = $GLOBALS['prv_test_state']['wpdb_insert_id']++;
 		return 1;
 	}
 	public function update( string $table, array $data, array $where, array $data_format = [], array $where_format = [] ): int {
 		return 1;
 	}
 	public function get_results( string $query, string $output = 'OBJECT' ): array {
-		return is_array( $GLOBALS['pgm_test_state']['wpdb_results'] ) ? $GLOBALS['pgm_test_state']['wpdb_results'] : [];
+		return is_array( $GLOBALS['prv_test_state']['wpdb_results'] ) ? $GLOBALS['prv_test_state']['wpdb_results'] : [];
 	}
 	public function get_var( string $query ): mixed {
-		return $GLOBALS['pgm_test_state']['wpdb_var'];
+		return $GLOBALS['prv_test_state']['wpdb_var'];
 	}
 }
 
@@ -240,35 +240,35 @@ function dbDelta( string $sql ): array { return []; }
 
 /* ── Test assertion helpers ────────────────────────────────────────────── */
 
-$GLOBALS['pgm_test_report'] = [ 'pass' => 0, 'fail' => 0, 'failures' => [] ];
+$GLOBALS['prv_test_report'] = [ 'pass' => 0, 'fail' => 0, 'failures' => [] ];
 
-function pgm_assert( bool $condition, string $label ): void {
+function prv_assert( bool $condition, string $label ): void {
 	if ( $condition ) {
-		$GLOBALS['pgm_test_report']['pass']++;
+		$GLOBALS['prv_test_report']['pass']++;
 		echo "  PASS: {$label}\n";
 	} else {
-		$GLOBALS['pgm_test_report']['fail']++;
-		$GLOBALS['pgm_test_report']['failures'][] = $label;
+		$GLOBALS['prv_test_report']['fail']++;
+		$GLOBALS['prv_test_report']['failures'][] = $label;
 		echo "  FAIL: {$label}\n";
 	}
 }
 
-function pgm_assert_equals( $expected, $actual, string $label ): void {
+function prv_assert_equals( $expected, $actual, string $label ): void {
 	$pass = ( $expected === $actual );
-	pgm_assert( $pass, $label . ( $pass ? '' : ' — expected ' . var_export( $expected, true ) . ', got ' . var_export( $actual, true ) ) );
+	prv_assert( $pass, $label . ( $pass ? '' : ' — expected ' . var_export( $expected, true ) . ', got ' . var_export( $actual, true ) ) );
 }
 
-function pgm_assert_throws( callable $fn, string $exception_class, string $label ): void {
+function prv_assert_throws( callable $fn, string $exception_class, string $label ): void {
 	try {
 		$fn();
-		pgm_assert( false, $label . ' — expected ' . $exception_class . ' but no exception thrown' );
+		prv_assert( false, $label . ' — expected ' . $exception_class . ' but no exception thrown' );
 	} catch ( \Throwable $e ) {
-		pgm_assert( $e instanceof $exception_class, $label . ' — got ' . get_class( $e ) );
+		prv_assert( $e instanceof $exception_class, $label . ' — got ' . get_class( $e ) );
 	}
 }
 
-function pgm_test_summary(): int {
-	$r = $GLOBALS['pgm_test_report'];
+function prv_test_summary(): int {
+	$r = $GLOBALS['prv_test_report'];
 	echo "\n---\n";
 	echo "Totals: {$r['pass']} passed, {$r['fail']} failed\n";
 	if ( $r['fail'] > 0 ) {
@@ -283,8 +283,8 @@ function pgm_test_summary(): int {
 
 /* ── Load autoloader + all plugin classes ──────────────────────────────── */
 
-require_once __DIR__ . '/../includes/core/class-pgm-autoloader.php';
-PGM_Autoloader::register();
-require_once __DIR__ . '/../includes/providers/interface-pgm-probe-provider.php';
-require_once __DIR__ . '/../includes/collector/interface-pgm-data-collector.php';
-require_once __DIR__ . '/../includes/panel/interface-pgm-dashboard-panel.php';
+require_once __DIR__ . '/../includes/core/class-prv-autoloader.php';
+PRV_Autoloader::register();
+require_once __DIR__ . '/../includes/providers/interface-prv-probe-provider.php';
+require_once __DIR__ . '/../includes/collector/interface-prv-data-collector.php';
+require_once __DIR__ . '/../includes/panel/interface-prv-dashboard-panel.php';

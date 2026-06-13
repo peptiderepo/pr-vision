@@ -2,19 +2,19 @@
 declare(strict_types=1);
 
 /**
- * Main orchestrator for the Peptide GEO Monitor plugin.
+ * Main orchestrator for the PR Vision plugin.
  *
  * Boots sub-systems in the correct order, hooks into WP, and keeps
  * the top-level file under the 300-line limit by delegating all logic
  * to specialist classes.
  *
- * Who triggers: plugins_loaded action (peptide-geo-monitor.php).
- * Dependencies: PGM_Cron, PGM_Admin_Page, PGM_Collector_Registry.
+ * Who triggers: plugins_loaded action (pr-vision.php).
+ * Dependencies: PRV_Cron, PRV_Admin_Page, PRV_Collector_Registry.
  *
  * @see ARCHITECTURE.md — Boot sequence diagram.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Plugin {
+class PRV_Plugin {
 
 	/**
 	 * Wire up all WordPress hooks.
@@ -25,17 +25,17 @@ class PGM_Plugin {
 	 * @return void
 	 */
 	public function init(): void {
-		$cron = new PGM_Cron();
+		$cron = new PRV_Cron();
 		$cron->register_hooks();
 
 		if ( is_admin() ) {
-			$page = new PGM_Admin_Page();
+			$page = new PRV_Admin_Page();
 			$page->register_hooks();
 		}
 
 		// Register the v1 AI-visibility collector + panel.
-		$registry = PGM_Collector_Registry::instance();
-		$registry->register_collector( new PGM_Ai_Visibility_Collector() );
-		$registry->register_panel( 'ai_visibility', new PGM_Ai_Visibility_Panel() );
+		$registry = PRV_Collector_Registry::instance();
+		$registry->register_collector( new PRV_Ai_Visibility_Collector() );
+		$registry->register_panel( 'ai_visibility', new PRV_Ai_Visibility_Panel() );
 	}
 }

@@ -13,19 +13,19 @@ declare(strict_types=1);
  *   https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openrouter
  *
  * Required WP-config constants (documented in README.md):
- *   PGM_CF_ACCOUNT_ID   — Cloudflare account ID
- *   PGM_CF_GATEWAY_ID   — AI Gateway name (e.g. "peptiderepo-prod")
- *   PGM_OPENROUTER_API_KEY — OpenRouter API key (sk-or-…)
+ *   PRV_CF_ACCOUNT_ID   — Cloudflare account ID
+ *   PRV_CF_GATEWAY_ID   — AI Gateway name (e.g. "peptiderepo-prod")
+ *   PRV_OPENROUTER_API_KEY — OpenRouter API key (sk-or-…)
  *
- * Who triggers: PGM_Perplexity_Provider, PGM_OpenRouter_Provider.
+ * Who triggers: PRV_Perplexity_Provider, PRV_OpenRouter_Provider.
  * Dependencies: wp_remote_post(), add_action(), curl_setopt().
  *
- * @see class-pgm-perplexity-provider.php  — Uses post_to_gateway().
- * @see class-pgm-openrouter-provider.php  — Uses post_to_gateway().
+ * @see class-prv-perplexity-provider.php  — Uses post_to_gateway().
+ * @see class-prv-openrouter-provider.php  — Uses post_to_gateway().
  * @see ARCHITECTURE.md                    — §External API integrations.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Gateway_Client {
+class PRV_Gateway_Client {
 
 	/**
 	 * Base URL for the Cloudflare AI Gateway (without trailing slash).
@@ -63,7 +63,7 @@ class PGM_Gateway_Client {
 			'Authorization' => 'Bearer ' . $api_key,
 			'Content-Type'  => 'application/json',
 			'HTTP-Referer'  => home_url(),
-			'X-Title'       => 'Peptide GEO Monitor',
+			'X-Title'       => 'PR Vision',
 		);
 
 		// Belt-and-suspenders cURL injection — some hosts strip Authorization.
@@ -72,11 +72,11 @@ class PGM_Gateway_Client {
 		$last_error = '';
 
 		try {
-			for ( $attempt = 1; $attempt <= PGM_MAX_RETRIES; $attempt++ ) {
+			for ( $attempt = 1; $attempt <= PRV_MAX_RETRIES; $attempt++ ) {
 				$response = wp_remote_post(
 					$url,
 					array(
-						'timeout' => PGM_API_TIMEOUT_SECONDS,
+						'timeout' => PRV_API_TIMEOUT_SECONDS,
 						'headers' => $headers,
 						'body'    => wp_json_encode( $body ),
 					)
@@ -84,8 +84,8 @@ class PGM_Gateway_Client {
 
 				if ( is_wp_error( $response ) ) {
 					$last_error = $response->get_error_message();
-					if ( $attempt < PGM_MAX_RETRIES ) {
-						sleep( PGM_RETRY_BASE_DELAY_SECONDS * (int) pow( 2, $attempt - 1 ) );
+					if ( $attempt < PRV_MAX_RETRIES ) {
+						sleep( PRV_RETRY_BASE_DELAY_SECONDS * (int) pow( 2, $attempt - 1 ) );
 					}
 					continue;
 				}
@@ -95,9 +95,9 @@ class PGM_Gateway_Client {
 
 				if ( $status >= 500 || 429 === $status ) {
 					$last_error = sprintf( 'HTTP %d', $status );
-					if ( $attempt < PGM_MAX_RETRIES ) {
+					if ( $attempt < PRV_MAX_RETRIES ) {
 						$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-						$delay = $retry_after ? min( (int) $retry_after, 60 ) : PGM_RETRY_BASE_DELAY_SECONDS * (int) pow( 2, $attempt - 1 );
+						$delay = $retry_after ? min( (int) $retry_after, 60 ) : PRV_RETRY_BASE_DELAY_SECONDS * (int) pow( 2, $attempt - 1 );
 						sleep( $delay );
 					}
 					continue;
@@ -105,13 +105,13 @@ class PGM_Gateway_Client {
 
 				if ( $status >= 400 ) {
 					throw new \RuntimeException(
-						sprintf( 'GEO Monitor gateway HTTP %d: %s', $status, substr( $raw_body, 0, 300 ) )
+						sprintf( 'PR Vision gateway HTTP %d: %s', $status, substr( $raw_body, 0, 300 ) )
 					);
 				}
 
 				$data = json_decode( $raw_body, true );
 				if ( ! is_array( $data ) ) {
-					throw new \RuntimeException( 'GEO Monitor: invalid JSON response from gateway.' );
+					throw new \RuntimeException( 'PR Vision: invalid JSON response from gateway.' );
 				}
 
 				return $data;
@@ -121,7 +121,7 @@ class PGM_Gateway_Client {
 		}
 
 		throw new \RuntimeException(
-			sprintf( 'GEO Monitor: gateway failed after %d attempts. Last: %s', PGM_MAX_RETRIES, $last_error )
+			sprintf( 'PR Vision: gateway failed after %d attempts. Last: %s', PRV_MAX_RETRIES, $last_error )
 		);
 	}
 
@@ -133,13 +133,13 @@ class PGM_Gateway_Client {
 	 * @return string Base URL without trailing slash.
 	 */
 	public function build_base_url( string $provider_slug ): string {
-		if ( defined( 'PGM_CF_ACCOUNT_ID' ) && defined( 'PGM_CF_GATEWAY_ID' )
-			&& '' !== PGM_CF_ACCOUNT_ID && '' !== PGM_CF_GATEWAY_ID ) {
+		if ( defined( 'PRV_CF_ACCOUNT_ID' ) && defined( 'PRV_CF_GATEWAY_ID' )
+			&& '' !== PRV_CF_ACCOUNT_ID && '' !== PRV_CF_GATEWAY_ID ) {
 			return sprintf(
 				'%s/%s/%s/%s',
 				self::GATEWAY_BASE,
-				PGM_CF_ACCOUNT_ID,
-				PGM_CF_GATEWAY_ID,
+				PRV_CF_ACCOUNT_ID,
+				PRV_CF_GATEWAY_ID,
 				$provider_slug
 			);
 		}

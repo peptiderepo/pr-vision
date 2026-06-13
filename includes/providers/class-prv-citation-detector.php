@@ -8,13 +8,13 @@ declare(strict_types=1);
  * without duplication.  Also parses raw citation arrays/URLs into a clean
  * domain list.
  *
- * Who triggers: PGM_Perplexity_Provider, PGM_OpenRouter_Provider.
+ * Who triggers: PRV_Perplexity_Provider, PRV_OpenRouter_Provider.
  * Dependencies: None (pure PHP).
  *
  * @see CONTEXT.md — "cited", "our_position", "source_domains".
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Citation_Detector {
+class PRV_Citation_Detector {
 
 	/**
 	 * Parse raw citation data from an API response into a clean domain list.
@@ -43,7 +43,8 @@ class PGM_Citation_Detector {
 
 			$host = (string) wp_parse_url( $url, PHP_URL_HOST );
 			if ( '' !== $host ) {
-				$domains[] = strtolower( ltrim( $host, 'www.' ) );
+				$bare            = str_starts_with( $host, 'www.' ) ? substr( $host, 4 ) : $host;
+				$domains[]       = strtolower( $bare );
 			}
 		}
 
@@ -51,18 +52,18 @@ class PGM_Citation_Detector {
 	}
 
 	/**
-	 * Detect whether PGM_TARGET_DOMAIN appears in a domain list.
+	 * Detect whether PRV_TARGET_DOMAIN appears in a domain list.
 	 *
 	 * @param string[] $domains Parsed domain list from parse_domains().
 	 *
 	 * @return bool
 	 */
 	public function is_cited( array $domains ): bool {
-		return in_array( PGM_TARGET_DOMAIN, $domains, true );
+		return in_array( PRV_TARGET_DOMAIN, $domains, true );
 	}
 
 	/**
-	 * Find the 1-based position of PGM_TARGET_DOMAIN in a domain list.
+	 * Find the 1-based position of PRV_TARGET_DOMAIN in a domain list.
 	 *
 	 * Returns null when the target domain is not found.
 	 *
@@ -71,7 +72,7 @@ class PGM_Citation_Detector {
 	 * @return int|null
 	 */
 	public function get_our_position( array $domains ): ?int {
-		$pos = array_search( PGM_TARGET_DOMAIN, $domains, true );
+		$pos = array_search( PRV_TARGET_DOMAIN, $domains, true );
 		if ( false === $pos ) {
 			return null;
 		}

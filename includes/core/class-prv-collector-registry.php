@@ -4,39 +4,39 @@ declare(strict_types=1);
 /**
  * Registry: holds all registered collectors and panels.
  *
- * PGM_Plugin::init() registers the v1 AI-visibility collector + panel.
+ * PRV_Plugin::init() registers the v1 AI-visibility collector + panel.
  * Future collectors/panels call register_collector()/register_panel()
  * without touching the dashboard shell.
  *
- * Who triggers: PGM_Plugin::init() on plugins_loaded.
- * Dependencies: PGM_Data_Collector, PGM_Dashboard_Panel interfaces.
+ * Who triggers: PRV_Plugin::init() on plugins_loaded.
+ * Dependencies: PRV_Data_Collector, PRV_Dashboard_Panel interfaces.
  *
- * @see interface-pgm-data-collector.php  — Collector contract.
- * @see interface-pgm-dashboard-panel.php — Panel contract.
- * @see class-pgm-plugin.php              — Calls register_* on boot.
+ * @see interface-prv-data-collector.php  — Collector contract.
+ * @see interface-prv-dashboard-panel.php — Panel contract.
+ * @see class-prv-plugin.php              — Calls register_* on boot.
  * @see ARCHITECTURE.md                   — §Collector/Panel seam.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Collector_Registry {
+class PRV_Collector_Registry {
 
 	/**
 	 * Singleton instance.
 	 *
-	 * @var PGM_Collector_Registry|null
+	 * @var PRV_Collector_Registry|null
 	 */
-	private static ?PGM_Collector_Registry $instance = null;
+	private static ?PRV_Collector_Registry $instance = null;
 
 	/**
 	 * Registered collectors keyed by their collector key.
 	 *
-	 * @var array<string, PGM_Data_Collector>
+	 * @var array<string, PRV_Data_Collector>
 	 */
 	private array $collectors = array();
 
 	/**
 	 * Registered panels keyed by their panel key (matches collector key).
 	 *
-	 * @var array<string, PGM_Dashboard_Panel>
+	 * @var array<string, PRV_Dashboard_Panel>
 	 */
 	private array $panels = array();
 
@@ -60,11 +60,11 @@ class PGM_Collector_Registry {
 	/**
 	 * Register a data collector.
 	 *
-	 * @param PGM_Data_Collector $collector
+	 * @param PRV_Data_Collector $collector
 	 *
 	 * @return void
 	 */
-	public function register_collector( PGM_Data_Collector $collector ): void {
+	public function register_collector( PRV_Data_Collector $collector ): void {
 		$this->collectors[ $collector->get_key() ] = $collector;
 	}
 
@@ -72,18 +72,18 @@ class PGM_Collector_Registry {
 	 * Register a dashboard panel.
 	 *
 	 * @param string               $key   Panel key (must match a collector key).
-	 * @param PGM_Dashboard_Panel  $panel
+	 * @param PRV_Dashboard_Panel  $panel
 	 *
 	 * @return void
 	 */
-	public function register_panel( string $key, PGM_Dashboard_Panel $panel ): void {
+	public function register_panel( string $key, PRV_Dashboard_Panel $panel ): void {
 		$this->panels[ $key ] = $panel;
 	}
 
 	/**
 	 * Get all registered collectors.
 	 *
-	 * @return array<string, PGM_Data_Collector>
+	 * @return array<string, PRV_Data_Collector>
 	 */
 	public function get_collectors(): array {
 		return $this->collectors;
@@ -94,9 +94,9 @@ class PGM_Collector_Registry {
 	 *
 	 * @param string $key Panel key.
 	 *
-	 * @return PGM_Dashboard_Panel|null
+	 * @return PRV_Dashboard_Panel|null
 	 */
-	public function get_panel( string $key ): ?PGM_Dashboard_Panel {
+	public function get_panel( string $key ): ?PRV_Dashboard_Panel {
 		return $this->panels[ $key ] ?? null;
 	}
 

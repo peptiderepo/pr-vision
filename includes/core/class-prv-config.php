@@ -4,19 +4,19 @@ declare(strict_types=1);
 /**
  * Configuration helper: seed defaults and retrieve plugin settings.
  *
- * All mutable settings live in wp_options under the pgm_ prefix. This class
+ * All mutable settings live in wp_options under the prv_ prefix. This class
  * provides typed getters (no magic values in call sites) and seeds the initial
  * defaults on first activation.
  *
- * Who triggers: PGM_Activator::activate() for seeding; every component that
+ * Who triggers: PRV_Activator::activate() for seeding; every component that
  *               needs a setting reads through here.
  * Dependencies: get_option(), update_option().
  *
  * @see CONTEXT.md          — Domain glossary: peptides, prompt intents, models.
  * @see ARCHITECTURE.md     — §Config (options + defaults).
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Config {
+class PRV_Config {
 
 	/**
 	 * Seed the default option values on first activation.
@@ -28,10 +28,10 @@ class PGM_Config {
 	 * @return void
 	 */
 	public static function seed_defaults(): void {
-		add_option( 'pgm_monthly_budget_usd', PGM_DEFAULT_MONTHLY_BUDGET_USD );
-		add_option( 'pgm_peptides', self::default_peptides() );
-		add_option( 'pgm_prompt_intents', self::default_prompt_intents() );
-		add_option( 'pgm_models', self::default_models() );
+		add_option( 'prv_monthly_budget_usd', PRV_DEFAULT_MONTHLY_BUDGET_USD );
+		add_option( 'prv_peptides', self::default_peptides() );
+		add_option( 'prv_prompt_intents', self::default_prompt_intents() );
+		add_option( 'prv_models', self::default_models() );
 	}
 
 	/**
@@ -40,8 +40,8 @@ class PGM_Config {
 	 * @return float Positive float; falls back to the plugin default.
 	 */
 	public static function get_monthly_budget_usd(): float {
-		$val = (float) get_option( 'pgm_monthly_budget_usd', PGM_DEFAULT_MONTHLY_BUDGET_USD );
-		return $val > 0.0 ? $val : PGM_DEFAULT_MONTHLY_BUDGET_USD;
+		$val = (float) get_option( 'prv_monthly_budget_usd', PRV_DEFAULT_MONTHLY_BUDGET_USD );
+		return $val > 0.0 ? $val : PRV_DEFAULT_MONTHLY_BUDGET_USD;
 	}
 
 	/**
@@ -52,7 +52,7 @@ class PGM_Config {
 	 * @return array<int, array{slug: string, label: string}>
 	 */
 	public static function get_peptides(): array {
-		$raw = get_option( 'pgm_peptides', self::default_peptides() );
+		$raw = get_option( 'prv_peptides', self::default_peptides() );
 		return is_array( $raw ) ? $raw : self::default_peptides();
 	}
 
@@ -64,7 +64,7 @@ class PGM_Config {
 	 * @return array<int, string>
 	 */
 	public static function get_prompt_intents(): array {
-		$raw = get_option( 'pgm_prompt_intents', self::default_prompt_intents() );
+		$raw = get_option( 'prv_prompt_intents', self::default_prompt_intents() );
 		return is_array( $raw ) ? $raw : self::default_prompt_intents();
 	}
 
@@ -74,7 +74,7 @@ class PGM_Config {
 	 * @return array<int, string>
 	 */
 	public static function get_models(): array {
-		$raw = get_option( 'pgm_models', self::default_models() );
+		$raw = get_option( 'prv_models', self::default_models() );
 		return is_array( $raw ) ? $raw : self::default_models();
 	}
 

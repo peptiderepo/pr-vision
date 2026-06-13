@@ -4,18 +4,18 @@ declare(strict_types=1);
 /**
  * Value object: the result of a single LLM probe call.
  *
- * Returned by every PGM_Probe_Provider implementation. Immutable — all
+ * Returned by every PRV_Probe_Provider implementation. Immutable — all
  * fields are set in the constructor and read via typed getters.
  *
- * Who triggers: PGM_Perplexity_Provider and PGM_OpenRouter_Provider.
+ * Who triggers: PRV_Perplexity_Provider and PRV_OpenRouter_Provider.
  * Dependencies: None.
  *
- * @see interface-pgm-probe-provider.php — Provider interface that returns this.
- * @see class-pgm-probe-runner.php       — Consumes the result for storage.
+ * @see interface-prv-probe-provider.php — Provider interface that returns this.
+ * @see class-prv-probe-runner.php       — Consumes the result for storage.
  * @see CONTEXT.md                       — "probe result", "cited", "our_position".
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Probe_Result {
+class PRV_Probe_Result {
 
 	/**
 	 * @param string        $raw_excerpt    First ~500 chars of the LLM's response.

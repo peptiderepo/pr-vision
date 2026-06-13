@@ -2,31 +2,31 @@
 /**
  * Tests for uninstall purge: table drop + options deletion.
  *
- * Exercises PGM_Table_Manager::drop_table() and verifies the uninstall
+ * Exercises PRV_Table_Manager::drop_table() and verifies the uninstall
  * script logic (simulated because it requires WP_UNINSTALL_PLUGIN).
  *
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-echo "=== PGM Uninstall Purge Tests ===\n";
+echo "=== PRV Uninstall Purge Tests ===\n";
 
 // ── Mock $wpdb to track DROP calls ──────────────────────────────────────
 
-$GLOBALS['pgm_test_state']['drop_calls'] = [];
+$GLOBALS['prv_test_state']['drop_calls'] = [];
 
 // Extend the stub to record DROP statements.
 global $wpdb;
 $wpdb = new class extends stdClass_wpdb {
 	public function query( string $sql ): bool {
 		if ( str_contains( strtoupper( $sql ), 'DROP TABLE' ) ) {
-			$GLOBALS['pgm_test_state']['drop_calls'][] = $sql;
+			$GLOBALS['prv_test_state']['drop_calls'][] = $sql;
 		}
-		if ( str_contains( strtoupper( $sql ), 'DELETE FROM' ) && str_contains( $sql, "pgm\\_" ) ) {
-			$GLOBALS['pgm_test_state']['options_deleted'] = true;
+		if ( str_contains( strtoupper( $sql ), 'DELETE FROM' ) && str_contains( $sql, "prv\\_" ) ) {
+			$GLOBALS['prv_test_state']['options_deleted'] = true;
 		}
 		return true;
 	}
@@ -34,68 +34,68 @@ $wpdb = new class extends stdClass_wpdb {
 
 // ── Test: drop_table issues DROP TABLE IF EXISTS ─────────────────────────
 
-pgm_test_reset();
-$GLOBALS['pgm_test_state']['drop_calls'] = [];
-PGM_Table_Manager::drop_table();
+prv_test_reset();
+$GLOBALS['prv_test_state']['drop_calls'] = [];
+PRV_Table_Manager::drop_table();
 
-pgm_assert( ! empty( $GLOBALS['pgm_test_state']['drop_calls'] ), 'drop_table: DROP TABLE query executed' );
-$drop_sql = $GLOBALS['pgm_test_state']['drop_calls'][0] ?? '';
-pgm_assert( str_contains( strtoupper( $drop_sql ), 'DROP TABLE IF EXISTS' ), 'drop_table: uses DROP TABLE IF EXISTS' );
-pgm_assert( str_contains( $drop_sql, 'pgm_ai_visibility' ), 'drop_table: targets pgm_ai_visibility table' );
+prv_assert( ! empty( $GLOBALS['prv_test_state']['drop_calls'] ), 'drop_table: DROP TABLE query executed' );
+$drop_sql = $GLOBALS['prv_test_state']['drop_calls'][0] ?? '';
+prv_assert( str_contains( strtoupper( $drop_sql ), 'DROP TABLE IF EXISTS' ), 'drop_table: uses DROP TABLE IF EXISTS' );
+prv_assert( str_contains( $drop_sql, 'prv_ai_visibility' ), 'drop_table: targets prv_ai_visibility table' );
 
 // ── Test: create_table sets the schema_version option ────────────────────
 
-pgm_test_reset();
-PGM_Table_Manager::create_table();
-$schema_ver = get_option( 'pgm_schema_version' );
-pgm_assert_equals( PGM_SCHEMA_VERSION, $schema_ver, 'create_table: pgm_schema_version option set after create' );
+prv_test_reset();
+PRV_Table_Manager::create_table();
+$schema_ver = get_option( 'prv_schema_version' );
+prv_assert_equals( PRV_SCHEMA_VERSION, $schema_ver, 'create_table: prv_schema_version option set after create' );
 
 // ── Test: get_table_name returns prefixed name ───────────────────────────
 
-pgm_test_reset();
-$table = PGM_Table_Manager::get_table_name();
-pgm_assert_equals( 'wp_pgm_ai_visibility', $table, 'get_table_name: returns wp_ prefixed table name' );
+prv_test_reset();
+$table = PRV_Table_Manager::get_table_name();
+prv_assert_equals( 'wp_prv_ai_visibility', $table, 'get_table_name: returns wp_ prefixed table name' );
 
 // ── Test: seed_defaults writes expected option keys ──────────────────────
 
-pgm_test_reset();
-PGM_Config::seed_defaults();
+prv_test_reset();
+PRV_Config::seed_defaults();
 
-pgm_assert( isset( $GLOBALS['pgm_test_state']['options']['pgm_monthly_budget_usd'] ), 'seed_defaults: pgm_monthly_budget_usd set' );
-pgm_assert( isset( $GLOBALS['pgm_test_state']['options']['pgm_peptides'] ), 'seed_defaults: pgm_peptides set' );
-pgm_assert( isset( $GLOBALS['pgm_test_state']['options']['pgm_prompt_intents'] ), 'seed_defaults: pgm_prompt_intents set' );
-pgm_assert( isset( $GLOBALS['pgm_test_state']['options']['pgm_models'] ), 'seed_defaults: pgm_models set' );
+prv_assert( isset( $GLOBALS['prv_test_state']['options']['prv_monthly_budget_usd'] ), 'seed_defaults: prv_monthly_budget_usd set' );
+prv_assert( isset( $GLOBALS['prv_test_state']['options']['prv_peptides'] ), 'seed_defaults: prv_peptides set' );
+prv_assert( isset( $GLOBALS['prv_test_state']['options']['prv_prompt_intents'] ), 'seed_defaults: prv_prompt_intents set' );
+prv_assert( isset( $GLOBALS['prv_test_state']['options']['prv_models'] ), 'seed_defaults: prv_models set' );
 
 // ── Test: seed_defaults does not overwrite existing values ───────────────
 
-pgm_test_reset();
-$GLOBALS['pgm_test_state']['options']['pgm_monthly_budget_usd'] = 99.0;
-PGM_Config::seed_defaults();
-pgm_assert_equals( 99.0, $GLOBALS['pgm_test_state']['options']['pgm_monthly_budget_usd'], 'seed_defaults: does not overwrite existing pgm_monthly_budget_usd' );
+prv_test_reset();
+$GLOBALS['prv_test_state']['options']['prv_monthly_budget_usd'] = 99.0;
+PRV_Config::seed_defaults();
+prv_assert_equals( 99.0, $GLOBALS['prv_test_state']['options']['prv_monthly_budget_usd'], 'seed_defaults: does not overwrite existing prv_monthly_budget_usd' );
 
-// ── Test: default budget is PGM_DEFAULT_MONTHLY_BUDGET_USD ──────────────
+// ── Test: default budget is PRV_DEFAULT_MONTHLY_BUDGET_USD ──────────────
 
-pgm_test_reset();
-PGM_Config::seed_defaults();
-pgm_assert_equals( PGM_DEFAULT_MONTHLY_BUDGET_USD, $GLOBALS['pgm_test_state']['options']['pgm_monthly_budget_usd'], 'seed_defaults: default budget = PGM_DEFAULT_MONTHLY_BUDGET_USD (5.0)' );
+prv_test_reset();
+PRV_Config::seed_defaults();
+prv_assert_equals( PRV_DEFAULT_MONTHLY_BUDGET_USD, $GLOBALS['prv_test_state']['options']['prv_monthly_budget_usd'], 'seed_defaults: default budget = PRV_DEFAULT_MONTHLY_BUDGET_USD (5.0)' );
 
 // ── Test: default peptide count is 12 ───────────────────────────────────
 
-pgm_test_reset();
-$peptides = PGM_Config::get_peptides();
-pgm_assert_equals( 12, count( $peptides ), 'get_peptides: default seed has 12 peptides' );
+prv_test_reset();
+$peptides = PRV_Config::get_peptides();
+prv_assert_equals( 12, count( $peptides ), 'get_peptides: default seed has 12 peptides' );
 
 // ── Test: default prompt intent count is 3 ──────────────────────────────
 
-pgm_test_reset();
-$intents = PGM_Config::get_prompt_intents();
-pgm_assert_equals( 3, count( $intents ), 'get_prompt_intents: default seed has 3 intents' );
+prv_test_reset();
+$intents = PRV_Config::get_prompt_intents();
+prv_assert_equals( 3, count( $intents ), 'get_prompt_intents: default seed has 3 intents' );
 
 // ── Test: default model count is 3 ──────────────────────────────────────
 
-pgm_test_reset();
-$models = PGM_Config::get_models();
-pgm_assert_equals( 3, count( $models ), 'get_models: default seed has 3 models' );
-pgm_assert( in_array( 'perplexity/sonar', $models, true ), 'get_models: perplexity/sonar in default models' );
+prv_test_reset();
+$models = PRV_Config::get_models();
+prv_assert_equals( 3, count( $models ), 'get_models: default seed has 3 models' );
+prv_assert( in_array( 'perplexity/sonar', $models, true ), 'get_models: perplexity/sonar in default models' );
 
-exit( pgm_test_summary() );
+exit( prv_test_summary() );

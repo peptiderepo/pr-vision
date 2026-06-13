@@ -6,40 +6,32 @@ declare(strict_types=1);
  *
  * For each combination the runner:
  * 1. Checks the monthly budget cap (aborts gracefully when hit).
- * 2. Caches responses for identical (peptide, intent, model) within the run.
- * 3. Dispatches to the correct provider (resolved from PGM_Config::get_models()).
- * 4. Writes a row to the pgm_ai_visibility table.
- * 5. Settles the actual cost against the ledger row.
+ * 2. Dispatches to the correct provider (resolved from PRV_Config::get_models()).
+ * 3. Writes a row to the prv_ai_visibility table.
+ * 4. Settles the actual cost against the ledger row.
  *
- * Who triggers: PGM_Cron::handle_cron_tick() and PGM_Admin_Page (Run now action).
- * Dependencies: PGM_Config, PGM_Cost_Ledger, PGM_Table_Manager, all providers.
+ * Who triggers: PRV_Cron::handle_cron_tick() and PRV_Admin_Page (Run now action).
+ * Dependencies: PRV_Config, PRV_Cost_Ledger, PRV_Table_Manager, all providers.
  *
- * @see class-pgm-cron.php             — Calls run() on the weekly schedule.
- * @see class-pgm-cost-ledger.php      — Budget cap enforcement.
- * @see class-pgm-perplexity-provider.php
- * @see class-pgm-openrouter-provider.php
+ * @see class-prv-cron.php             — Calls run() on the weekly schedule.
+ * @see class-prv-cost-ledger.php      — Budget cap enforcement.
+ * @see class-prv-perplexity-provider.php
+ * @see class-prv-openrouter-provider.php
  * @see ARCHITECTURE.md                — §Probe run flow.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Probe_Runner {
+class PRV_Probe_Runner {
 
 	/**
-	 * @var PGM_Cost_Ledger
+	 * @var PRV_Cost_Ledger
 	 */
-	private PGM_Cost_Ledger $ledger;
+	private PRV_Cost_Ledger $ledger;
 
 	/**
-	 * In-run response cache: key = "{peptide_slug}|{intent}|{model}" → PGM_Probe_Result.
-	 *
-	 * @var array<string, PGM_Probe_Result>
+	 * @param PRV_Cost_Ledger|null $ledger Injected for testing; auto-created otherwise.
 	 */
-	private array $cache = array();
-
-	/**
-	 * @param PGM_Cost_Ledger|null $ledger Injected for testing; auto-created otherwise.
-	 */
-	public function __construct( ?PGM_Cost_Ledger $ledger = null ) {
-		$this->ledger = $ledger ?? new PGM_Cost_Ledger();
+	public function __construct( ?PRV_Cost_Ledger $ledger = null ) {
+		$this->ledger = $ledger ?? new PRV_Cost_Ledger();
 	}
 
 	/**
@@ -56,9 +48,9 @@ class PGM_Probe_Runner {
 	 */
 	public function run(): array {
 		$run_id   = $this->generate_run_id();
-		$peptides = PGM_Config::get_peptides();
-		$intents  = PGM_Config::get_prompt_intents();
-		$models   = PGM_Config::get_models();
+		$peptides = PRV_Config::get_peptides();
+		$intents  = PRV_Config::get_prompt_intents();
+		$models   = PRV_Config::get_models();
 
 		$counts = array(
 			'probed'          => 0,
@@ -85,19 +77,12 @@ class PGM_Probe_Runner {
 						continue;
 					}
 
-					// In-run cache check.
-					$cache_key = $peptide['slug'] . '|' . $intent_tpl . '|' . $model;
-					if ( isset( $this->cache[ $cache_key ] ) ) {
-						$result = $this->cache[ $cache_key ];
-					} else {
-						try {
-							$result = $provider->probe( $query );
-							$this->cache[ $cache_key ] = $result;
-						} catch ( \Exception $e ) {
-							error_log( sprintf( 'PGM: probe failed [%s / %s]: %s', $model, $peptide['slug'], $e->getMessage() ) );
-							$counts['skipped_error']++;
-							continue;
-						}
+					try {
+						$result = $provider->probe( $query );
+					} catch ( \Exception $e ) {
+						error_log( sprintf( 'PRV: probe failed [%s / %s]: %s', $model, $peptide['slug'], $e->getMessage() ) );
+						$counts['skipped_error']++;
+						continue;
 					}
 
 					$row_id = $this->persist_result( $run_id, $peptide, $model, $intent_tpl, $result );
@@ -110,7 +95,6 @@ class PGM_Probe_Runner {
 			}
 		}
 
-		$this->cache = array(); // Reset cache after run.
 		return $counts;
 	}
 
@@ -121,14 +105,14 @@ class PGM_Probe_Runner {
 	 * @param array{slug:string, label:string} $peptide Peptide config.
 	 * @param string               $model       Model identifier.
 	 * @param string               $intent_tpl  Raw intent template string.
-	 * @param PGM_Probe_Result     $result      Probe result.
+	 * @param PRV_Probe_Result     $result      Probe result.
 	 *
 	 * @return int Inserted row ID, or 0 on failure.
 	 */
-	private function persist_result( string $run_id, array $peptide, string $model, string $intent_tpl, PGM_Probe_Result $result ): int {
+	private function persist_result( string $run_id, array $peptide, string $model, string $intent_tpl, PRV_Probe_Result $result ): int {
 		global $wpdb;
 
-		$table = PGM_Table_Manager::get_table_name();
+		$table = PRV_Table_Manager::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
@@ -157,14 +141,14 @@ class PGM_Probe_Runner {
 	 *
 	 * @param string $model OpenRouter model identifier.
 	 *
-	 * @return PGM_Probe_Provider|null Null when the model is unrecognised.
+	 * @return PRV_Probe_Provider|null Null when the model is unrecognised.
 	 */
-	private function resolve_provider( string $model ): ?PGM_Probe_Provider {
+	private function resolve_provider( string $model ): ?PRV_Probe_Provider {
 		if ( 'perplexity/sonar' === $model ) {
-			return new PGM_Perplexity_Provider();
+			return new PRV_Perplexity_Provider();
 		}
 		// All other models route through the generic OpenRouter provider.
-		return new PGM_OpenRouter_Provider( $model );
+		return new PRV_OpenRouter_Provider( $model );
 	}
 
 	/**
@@ -176,9 +160,9 @@ class PGM_Probe_Runner {
 	 */
 	private function get_estimated_cost( string $model ): float {
 		if ( 'perplexity/sonar' === $model ) {
-			return PGM_Perplexity_Provider::ESTIMATED_COST_PER_PROBE;
+			return PRV_Perplexity_Provider::ESTIMATED_COST_PER_PROBE;
 		}
-		return PGM_OpenRouter_Provider::ESTIMATED_COST_PER_PROBE;
+		return PRV_OpenRouter_Provider::ESTIMATED_COST_PER_PROBE;
 	}
 
 	/**

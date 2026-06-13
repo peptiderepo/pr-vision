@@ -9,19 +9,19 @@ declare(strict_types=1);
  * throwing — a partial run that respects the budget is acceptable; an
  * over-spend is not.
  *
- * Costs are stored in the pgm_ai_visibility table (cost_usd column per row)
+ * Costs are stored in the prv_ai_visibility table (cost_usd column per row)
  * and summarized by summing the current calendar month's rows. No separate
  * ledger table is needed; the visibility table IS the ledger.
  *
- * Who triggers: PGM_Probe_Runner before and after each API call.
- * Dependencies: $wpdb, PGM_Table_Manager.
+ * Who triggers: PRV_Probe_Runner before and after each API call.
+ * Dependencies: $wpdb, PRV_Table_Manager.
  *
- * @see class-pgm-probe-runner.php  — Calls can_afford() and record_call().
- * @see class-pgm-table-manager.php — Table where cost_usd is stored.
+ * @see class-prv-probe-runner.php  — Calls can_afford() and record_call().
+ * @see class-prv-table-manager.php — Table where cost_usd is stored.
  * @see CONTEXT.md                  — "monthly cap" definition.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Cost_Ledger {
+class PRV_Cost_Ledger {
 
 	/**
 	 * Retrieve the total probe cost incurred in the current calendar month (UTC).
@@ -33,7 +33,7 @@ class PGM_Cost_Ledger {
 	public function get_month_to_date_usd(): float {
 		global $wpdb;
 
-		$table = PGM_Table_Manager::get_table_name();
+		$table = PRV_Table_Manager::get_table_name();
 		$month = gmdate( 'Y-m' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -60,7 +60,7 @@ class PGM_Cost_Ledger {
 	 * @return bool True when the call can proceed within budget.
 	 */
 	public function can_afford( float $estimated_cost_usd ): bool {
-		$cap    = PGM_Config::get_monthly_budget_usd();
+		$cap    = PRV_Config::get_monthly_budget_usd();
 		$spent  = $this->get_month_to_date_usd();
 		return ( $spent + $estimated_cost_usd ) <= $cap;
 	}
@@ -71,7 +71,7 @@ class PGM_Cost_Ledger {
 	 * @return float Remaining USD; 0.0 when the cap is already hit.
 	 */
 	public function get_remaining_budget_usd(): float {
-		$cap   = PGM_Config::get_monthly_budget_usd();
+		$cap   = PRV_Config::get_monthly_budget_usd();
 		$spent = $this->get_month_to_date_usd();
 		return max( 0.0, $cap - $spent );
 	}
@@ -79,13 +79,13 @@ class PGM_Cost_Ledger {
 	/**
 	 * Record a completed API call's cost against a specific row ID.
 	 *
-	 * Updates the cost_usd column on the row created by PGM_Probe_Runner.
+	 * Updates the cost_usd column on the row created by PRV_Probe_Runner.
 	 * The run is already written to the table before the cost is settled so
 	 * even partial runs (budget abort) have their completed rows costed.
 	 *
 	 * Side effects: Database write.
 	 *
-	 * @param int   $row_id   Primary key of the pgm_ai_visibility row.
+	 * @param int   $row_id   Primary key of the prv_ai_visibility row.
 	 * @param float $cost_usd Actual cost in USD.
 	 *
 	 * @return bool True on success.
@@ -93,7 +93,7 @@ class PGM_Cost_Ledger {
 	public function update_row_cost( int $row_id, float $cost_usd ): bool {
 		global $wpdb;
 
-		$table = PGM_Table_Manager::get_table_name();
+		$table = PRV_Table_Manager::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$result = $wpdb->update(

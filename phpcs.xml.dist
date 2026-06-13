@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Peptide GEO Monitor">
-	<description>WordPress coding standards for Peptide GEO Monitor.</description>
+<ruleset name="PR Vision">
+	<description>WordPress coding standards for PR Vision.</description>
 
 	<file>.</file>
 

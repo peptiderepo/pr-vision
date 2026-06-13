@@ -1,12 +1,12 @@
-# Architecture — Peptide GEO Monitor
+# Architecture — PR Vision
 
-**Version:** 0.1.0 | **Last updated:** 2026-06-13
+**Version:** 0.1.1 | **Last updated:** 2026-06-13
 
 ---
 
 ## 1. Overview
 
-`peptide-geo-monitor` is an internal WordPress plugin that runs weekly server-side LLM probes to measure whether peptiderepo.com appears in AI citations across core peptide queries. It stores a time-series in a custom table and renders an admin dashboard.
+`pr-vision` is an internal WordPress plugin that runs weekly server-side LLM probes to measure whether peptiderepo.com appears in AI citations across core peptide queries. It stores a time-series in a custom table and renders an admin dashboard.
 
 **v1 scope:** AI-visibility only. The collector/panel seam is present so future data categories (keyword rankings, technical-SEO) can be added as new classes.
 
@@ -15,37 +15,37 @@
 ## 2. File tree
 
 ```
-peptide-geo-monitor/
-├── peptide-geo-monitor.php          # Plugin boot: constants, autoloader, hooks
-├── uninstall.php                    # Full data teardown: DROP TABLE + DELETE pgm_* options
+pr-vision/
+├── pr-vision.php          # Plugin boot: constants, autoloader, hooks
+├── uninstall.php                    # Full data teardown: DROP TABLE + DELETE prv_* options
 ├── composer.json                    # Dev deps (PHPCS only)
 ├── phpcs.xml.dist                   # PHPCS config (WordPress standard)
 ├── includes/
 │   ├── core/
-│   │   ├── class-pgm-autoloader.php          # SPL autoloader: PGM_* → includes/**
-│   │   ├── class-pgm-plugin.php              # Orchestrator: boots sub-systems
-│   │   ├── class-pgm-activator.php           # Activation: table + defaults + cron
-│   │   ├── class-pgm-deactivator.php         # Deactivation: clear cron
-│   │   ├── class-pgm-table-manager.php       # dbDelta create/drop + get_table_name()
-│   │   ├── class-pgm-config.php              # Typed getters + seed_defaults()
-│   │   ├── class-pgm-cron.php                # Weekly WP-Cron schedule/clear
-│   │   ├── class-pgm-cost-ledger.php         # MTD cost + hard monthly cap enforcement
-│   │   ├── class-pgm-probe-result.php        # Immutable value object from a probe call
-│   │   ├── class-pgm-probe-runner.php        # Orchestrates peptide×intent×model run
-│   │   ├── class-pgm-collector-registry.php  # Singleton registry for collectors + panels
-│   │   └── class-pgm-admin-page.php          # Admin page: menu, Run now, rendering
+│   │   ├── class-prv-autoloader.php          # SPL autoloader: PRV_* → includes/**
+│   │   ├── class-prv-plugin.php              # Orchestrator: boots sub-systems
+│   │   ├── class-prv-activator.php           # Activation: table + defaults + cron
+│   │   ├── class-prv-deactivator.php         # Deactivation: clear cron
+│   │   ├── class-prv-table-manager.php       # dbDelta create/drop + get_table_name()
+│   │   ├── class-prv-config.php              # Typed getters + seed_defaults()
+│   │   ├── class-prv-cron.php                # Weekly WP-Cron schedule/clear
+│   │   ├── class-prv-cost-ledger.php         # MTD cost + hard monthly cap enforcement
+│   │   ├── class-prv-probe-result.php        # Immutable value object from a probe call
+│   │   ├── class-prv-probe-runner.php        # Orchestrates peptide×intent×model run
+│   │   ├── class-prv-collector-registry.php  # Singleton registry for collectors + panels
+│   │   └── class-prv-admin-page.php          # Admin page: menu, Run now, rendering
 │   ├── providers/
-│   │   ├── interface-pgm-probe-provider.php  # probe(query): PGM_Probe_Result contract
-│   │   ├── class-pgm-gateway-client.php      # Cloudflare AI Gateway HTTP + retry
-│   │   ├── class-pgm-citation-detector.php   # Domain extraction + cite detection
-│   │   ├── class-pgm-perplexity-provider.php # Perplexity sonar via OpenRouter/gateway
-│   │   └── class-pgm-openrouter-provider.php # Generic OpenRouter (GPT-search, Gemini)
+│   │   ├── interface-prv-probe-provider.php  # probe(query): PRV_Probe_Result contract
+│   │   ├── class-prv-gateway-client.php      # Cloudflare AI Gateway HTTP + retry
+│   │   ├── class-prv-citation-detector.php   # Domain extraction + cite detection
+│   │   ├── class-prv-perplexity-provider.php # Perplexity sonar via OpenRouter/gateway
+│   │   └── class-prv-openrouter-provider.php # Generic OpenRouter (GPT-search, Gemini)
 │   ├── collector/
-│   │   ├── interface-pgm-data-collector.php  # collect(): array seam
-│   │   └── class-pgm-ai-visibility-collector.php  # AI-visibility data from DB
+│   │   ├── interface-prv-data-collector.php  # collect(): array seam
+│   │   └── class-prv-ai-visibility-collector.php  # AI-visibility data from DB
 │   └── panel/
-│       ├── interface-pgm-dashboard-panel.php # render(data): void seam
-│       └── class-pgm-ai-visibility-panel.php # Renders trendline + standings
+│       ├── interface-prv-dashboard-panel.php # render(data): void seam
+│       └── class-prv-ai-visibility-panel.php # Renders trendline + standings
 ├── tests/
 │   ├── bootstrap.php               # WP-stub bootstrap (no PHPUnit)
 │   └── unit/
@@ -67,37 +67,37 @@ peptide-geo-monitor/
 WP-Cron (weekly) ──────────────────────────────────────┐
 Admin "Run now" (POST + nonce) ─────────────────────────┤
                                                         ↓
-                                            PGM_Probe_Runner::run()
+                                            PRV_Probe_Runner::run()
                                                         │
                     ┌───────────────────────────────────┤
                     │  for each peptide × intent × model│
                     │                                   │
-                    │  PGM_Cost_Ledger::can_afford()     │
+                    │  PRV_Cost_Ledger::can_afford()     │
                     │    └─ ABORT gracefully if at cap   │
                     │                                   │
-                    │  PGM_Probe_Provider::probe(query)  │
-                    │    └─ PGM_Gateway_Client           │
+                    │  PRV_Probe_Provider::probe(query)  │
+                    │    └─ PRV_Gateway_Client           │
                     │         └─ Cloudflare AI Gateway   │
                     │              └─ OpenRouter         │
                     │                   └─ LLM           │
                     │                                   │
-                    │  PGM_Citation_Detector             │
+                    │  PRV_Citation_Detector             │
                     │    └─ extract domains              │
                     │    └─ detect peptiderepo.com       │
                     │                                   │
-                    │  $wpdb→insert(pgm_ai_visibility)   │
-                    │  PGM_Cost_Ledger::update_row_cost()│
+                    │  $wpdb→insert(prv_ai_visibility)   │
+                    │  PRV_Cost_Ledger::update_row_cost()│
                     └───────────────────────────────────┘
                                                         │
 Admin page load ────────────────────────────────────────┤
                                                         ↓
-                                  PGM_Admin_Page::render_page()
+                                  PRV_Admin_Page::render_page()
                                           │
-                                PGM_Collector_Registry
+                                PRV_Collector_Registry
                                           │
-                         PGM_Ai_Visibility_Collector::collect()
+                         PRV_Ai_Visibility_Collector::collect()
                                           │  (DB reads)
-                         PGM_Ai_Visibility_Panel::render()
+                         PRV_Ai_Visibility_Panel::render()
                                           │  (HTML output)
                                    Browser (Chart.js)
 ```
@@ -106,7 +106,7 @@ Admin page load ─────────────────────�
 
 ## 4. Database
 
-**Table:** `{prefix}pgm_ai_visibility`
+**Table:** `{prefix}prv_ai_visibility`
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -123,7 +123,7 @@ Admin page load ─────────────────────�
 | raw_excerpt | LONGTEXT | First 500 chars of LLM response |
 | cost_usd | DECIMAL(12,8) | Actual call cost |
 
-Schema version tracked in `pgm_schema_version` option.
+Schema version tracked in `prv_schema_version` option.
 
 ---
 
@@ -133,7 +133,7 @@ Schema version tracked in `pgm_schema_version` option.
 
 All LLM calls route through:
 ```
-https://gateway.ai.cloudflare.com/v1/{PGM_CF_ACCOUNT_ID}/{PGM_CF_GATEWAY_ID}/openrouter
+https://gateway.ai.cloudflare.com/v1/{PRV_CF_ACCOUNT_ID}/{PRV_CF_GATEWAY_ID}/openrouter
 ```
 
 Falls back to direct OpenRouter (`https://openrouter.ai/api/v1`) when the constants are absent or empty.
@@ -144,26 +144,26 @@ Pattern mirrors PRAutoBlogger's `class-open-router-config.php` and `class-open-r
 
 | Provider | Model | Citation source |
 |----------|-------|-----------------|
-| PGM_Perplexity_Provider | `perplexity/sonar` | `citations[]` array (primary, real-web retrieval) |
-| PGM_OpenRouter_Provider | `openai/gpt-4o-search-preview` | annotations or inline URL regex |
-| PGM_OpenRouter_Provider | `google/gemini-2.0-flash-001` | annotations or inline URL regex |
+| PRV_Perplexity_Provider | `perplexity/sonar` | `citations[]` array (primary, real-web retrieval) |
+| PRV_OpenRouter_Provider | `openai/gpt-4o-search-preview` | annotations or inline URL regex |
+| PRV_OpenRouter_Provider | `google/gemini-2.0-flash-001` | annotations or inline URL regex |
 
 ---
 
 ## 6. Collector / Panel seam
 
 ```
-PGM_Data_Collector (interface)           PGM_Dashboard_Panel (interface)
+PRV_Data_Collector (interface)           PRV_Dashboard_Panel (interface)
         │                                          │
-PGM_Ai_Visibility_Collector          PGM_Ai_Visibility_Panel
+PRV_Ai_Visibility_Collector          PRV_Ai_Visibility_Panel
         │                                          │
-        └──────── PGM_Collector_Registry ──────────┘
+        └──────── PRV_Collector_Registry ──────────┘
                   (key: "ai_visibility")
 ```
 
 To add a future SEO collector (keyword rankings, schema coverage…):
-1. Implement `PGM_Data_Collector` + `PGM_Dashboard_Panel`.
-2. Register both in `PGM_Plugin::init()`.
+1. Implement `PRV_Data_Collector` + `PRV_Dashboard_Panel`.
+2. Register both in `PRV_Plugin::init()`.
 No dashboard shell changes required.
 
 ---

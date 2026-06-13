@@ -1,74 +1,74 @@
 <?php
 /**
- * Tests for PGM_Citation_Detector: domain extraction and cite detection.
+ * Tests for PRV_Citation_Detector: domain extraction and cite detection.
  *
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-echo "=== PGM Citation Detector Tests ===\n";
+echo "=== PRV Citation Detector Tests ===\n";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-$detector = new PGM_Citation_Detector();
+$detector = new PRV_Citation_Detector();
 
 // ── Test: parse plain URL strings ────────────────────────────────────────
 
-pgm_test_reset();
+prv_test_reset();
 $domains = $detector->parse_domains( [
 	'https://peptiderepo.com/bpc-157/',
 	'https://www.examine.com/supplements/bpc-157/',
 	'https://pubmed.ncbi.nlm.nih.gov/12345',
 ] );
 
-pgm_assert( in_array( 'peptiderepo.com', $domains, true ), 'parse_domains: peptiderepo.com extracted from URL' );
-pgm_assert( in_array( 'examine.com', $domains, true ), 'parse_domains: www. stripped from examine.com' );
-pgm_assert( in_array( 'pubmed.ncbi.nlm.nih.gov', $domains, true ), 'parse_domains: full subdomain preserved when not www.' );
-pgm_assert_equals( 3, count( $domains ), 'parse_domains: exactly 3 unique domains' );
+prv_assert( in_array( 'peptiderepo.com', $domains, true ), 'parse_domains: peptiderepo.com extracted from URL' );
+prv_assert( in_array( 'examine.com', $domains, true ), 'parse_domains: www. stripped from examine.com' );
+prv_assert( in_array( 'pubmed.ncbi.nlm.nih.gov', $domains, true ), 'parse_domains: full subdomain preserved when not www.' );
+prv_assert_equals( 3, count( $domains ), 'parse_domains: exactly 3 unique domains' );
 
 // ── Test: parse object-style citations (Perplexity format) ───────────────
 
-pgm_test_reset();
+prv_test_reset();
 $domains = $detector->parse_domains( [
 	[ 'url' => 'https://peptiderepo.com/tb-500/' ],
 	[ 'url' => 'https://examine.com/tb500' ],
 	[ 'url' => 'https://peptiderepo.com/bpc-157/' ], // duplicate domain
 ] );
 
-pgm_assert_equals( 2, count( $domains ), 'parse_domains: object-style citations, duplicates removed' );
-pgm_assert( in_array( 'peptiderepo.com', $domains, true ), 'parse_domains: object-style, peptiderepo.com present' );
+prv_assert_equals( 2, count( $domains ), 'parse_domains: object-style citations, duplicates removed' );
+prv_assert( in_array( 'peptiderepo.com', $domains, true ), 'parse_domains: object-style, peptiderepo.com present' );
 
 // ── Test: parse empty input ──────────────────────────────────────────────
 
-pgm_test_reset();
+prv_test_reset();
 $domains = $detector->parse_domains( [] );
-pgm_assert_equals( [], $domains, 'parse_domains: empty input returns empty array' );
+prv_assert_equals( [], $domains, 'parse_domains: empty input returns empty array' );
 
 // ── Test: is_cited detection ─────────────────────────────────────────────
 
-pgm_test_reset();
-pgm_assert( $detector->is_cited( ['peptiderepo.com', 'examine.com'] ), 'is_cited: returns true when target present' );
-pgm_assert( ! $detector->is_cited( ['examine.com', 'pubmed.ncbi.nlm.nih.gov'] ), 'is_cited: returns false when target absent' );
-pgm_assert( ! $detector->is_cited( [] ), 'is_cited: returns false for empty list' );
+prv_test_reset();
+prv_assert( $detector->is_cited( ['peptiderepo.com', 'examine.com'] ), 'is_cited: returns true when target present' );
+prv_assert( ! $detector->is_cited( ['examine.com', 'pubmed.ncbi.nlm.nih.gov'] ), 'is_cited: returns false when target absent' );
+prv_assert( ! $detector->is_cited( [] ), 'is_cited: returns false for empty list' );
 
 // ── Test: get_our_position ───────────────────────────────────────────────
 
-pgm_test_reset();
+prv_test_reset();
 $domains = ['examine.com', 'peptiderepo.com', 'pubmed.ncbi.nlm.nih.gov'];
-pgm_assert_equals( 2, $detector->get_our_position( $domains ), 'get_our_position: 1-based, position 2' );
+prv_assert_equals( 2, $detector->get_our_position( $domains ), 'get_our_position: 1-based, position 2' );
 
 $domains_first = ['peptiderepo.com', 'examine.com'];
-pgm_assert_equals( 1, $detector->get_our_position( $domains_first ), 'get_our_position: position 1 when first' );
+prv_assert_equals( 1, $detector->get_our_position( $domains_first ), 'get_our_position: position 1 when first' );
 
 $domains_absent = ['examine.com', 'pubmed.ncbi.nlm.nih.gov'];
-pgm_assert_equals( null, $detector->get_our_position( $domains_absent ), 'get_our_position: null when not present' );
+prv_assert_equals( null, $detector->get_our_position( $domains_absent ), 'get_our_position: null when not present' );
 
 // ── Test: malformed / unexpected input ───────────────────────────────────
 
-pgm_test_reset();
+prv_test_reset();
 $domains = $detector->parse_domains( [
 	'not-a-url',
 	42,
@@ -76,6 +76,21 @@ $domains = $detector->parse_domains( [
 	['no_url_key' => 'foo'],
 	['url' => ''],
 ] );
-pgm_assert_equals( [], $domains, 'parse_domains: gracefully skips malformed items' );
+prv_assert_equals( [], $domains, 'parse_domains: gracefully skips malformed items' );
 
-exit( pgm_test_summary() );
+
+// ── Test: P2-A — www-strip must not corrupt non-www domains starting with 'w' ──
+
+prv_test_reset();
+$domains = $detector->parse_domains( [
+	'https://wikipedia.org/wiki/bpc-157',
+	'https://www.examine.com/bpc-157/',
+	'https://webmd.com/drug/bpc-157',
+] );
+
+prv_assert( in_array( 'wikipedia.org', $domains, true ), 'P2-A: wikipedia.org survives intact (no char-mask corruption)' );
+prv_assert( in_array( 'examine.com', $domains, true ),   'P2-A: www.examine.com correctly stripped to examine.com' );
+prv_assert( in_array( 'webmd.com', $domains, true ),     'P2-A: webmd.com survives intact (no char-mask corruption)' );
+prv_assert_equals( 3, count( $domains ),                  'P2-A: exactly 3 unique domains from 3 distinct URLs' );
+
+exit( prv_test_summary() );

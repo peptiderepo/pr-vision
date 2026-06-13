@@ -1,4 +1,4 @@
-# Peptide GEO Monitor
+# PR Vision
 
 An internal WordPress plugin that runs weekly server-side LLM probes to measure whether peptiderepo.com is cited by AI assistants across core peptides.
 
@@ -18,11 +18,11 @@ The displayed metric is a **directional proxy** — API probes do not replicate 
 
 ```php
 // OpenRouter API key (sk-or-…) — required for all providers.
-define( 'PGM_OPENROUTER_API_KEY', 'sk-or-YOUR_KEY_HERE' );
+define( 'PRV_OPENROUTER_API_KEY', 'sk-or-YOUR_KEY_HERE' );
 
 // Cloudflare AI Gateway routing (optional — falls back to direct OpenRouter).
-define( 'PGM_CF_ACCOUNT_ID', 'YOUR_CF_ACCOUNT_ID' );
-define( 'PGM_CF_GATEWAY_ID', 'YOUR_GATEWAY_NAME' );
+define( 'PRV_CF_ACCOUNT_ID', 'YOUR_CF_ACCOUNT_ID' );
+define( 'PRV_CF_GATEWAY_ID', 'YOUR_GATEWAY_NAME' );
 ```
 
 **Never commit these values. They are read at runtime from wp-config.php only.**
@@ -37,7 +37,7 @@ See `ARCHITECTURE.md` for the full file tree, data flow, and design decisions.
 
 ## Admin page
 
-Navigate to **GEO Monitor** in the WordPress admin sidebar (`manage_options` required).
+Navigate to **PR Vision** in the WordPress admin sidebar (`manage_options` required).
 
 The page shows:
 - A proxy-metric disclaimer note.
@@ -50,26 +50,26 @@ The page shows:
 
 ## Scheduling
 
-A weekly WP-Cron event (`pgm_weekly_probe`) is registered on plugin activation and cleared on deactivation. Probe runs (cron or manual) respect the hard monthly budget cap.
+A weekly WP-Cron event (`prv_weekly_probe`) is registered on plugin activation and cleared on deactivation. Probe runs (cron or manual) respect the hard monthly budget cap.
 
 ---
 
 ## Cost cap
 
-Default cap: **$5.00 USD/month** (configurable via the `pgm_monthly_budget_usd` option). The runner checks the month-to-date spend **before** each API call and stops gracefully when the cap is reached — partial runs are recorded, never over-spend.
+Default cap: **$5.00 USD/month** (configurable via the `prv_monthly_budget_usd` option). The runner checks the month-to-date spend **before** each API call and stops gracefully when the cap is reached — partial runs are recorded, never over-spend.
 
 ---
 
 ## Uninstall
 
-Uninstalling the plugin drops the `{prefix}pgm_ai_visibility` table and deletes all `pgm_*` options. Deactivation only clears the cron schedule.
+Uninstalling the plugin drops the `{prefix}prv_ai_visibility` table and deletes all `prv_*` options. Deactivation only clears the cron schedule.
 
 ---
 
 ## Developer notes
 
 - PHP 8.1+ required. No runtime Composer dependencies.
-- All classes prefixed `PGM_`. All options/hooks prefixed `pgm_`.
+- All classes prefixed `PRV_`. All options/hooks prefixed `prv_`.
 - Files are kept under 300 lines; one class per file.
 - See `CONVENTIONS.md` for naming patterns and extension guides.
 - See `CONTEXT.md` for the domain glossary including the visibility score formula.

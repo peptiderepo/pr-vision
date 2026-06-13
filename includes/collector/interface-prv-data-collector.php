@@ -2,22 +2,22 @@
 declare(strict_types=1);
 
 /**
- * Seam: contract for all GEO-monitor data collectors.
+ * Seam: contract for all PR Vision data collectors.
  *
- * v1 implements only PGM_Ai_Visibility_Collector. Future collectors
+ * v1 implements only PRV_Ai_Visibility_Collector. Future collectors
  * (keyword rankings, schema coverage, technical-SEO) implement this
- * interface and register themselves with PGM_Collector_Registry without
+ * interface and register themselves with PRV_Collector_Registry without
  * changing the dashboard shell.
  *
- * Who triggers: PGM_Collector_Registry dispatches registered collectors.
+ * Who triggers: PRV_Collector_Registry dispatches registered collectors.
  * Dependencies: None — pure interface.
  *
- * @see class-pgm-ai-visibility-collector.php — v1 implementation.
- * @see class-pgm-collector-registry.php      — Registration hub.
+ * @see class-prv-ai-visibility-collector.php — v1 implementation.
+ * @see class-prv-collector-registry.php      — Registration hub.
  * @see ARCHITECTURE.md                       — §Collector/Panel seam.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-interface PGM_Data_Collector {
+interface PRV_Data_Collector {
 
 	/**
 	 * Collect and return the data payload for this category.

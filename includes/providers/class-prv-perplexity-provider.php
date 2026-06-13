@@ -10,19 +10,19 @@ declare(strict_types=1);
  * available (real web retrieval vs. training-time knowledge).
  *
  * Required WP-config constant:
- *   PGM_OPENROUTER_API_KEY — OpenRouter key (sk-or-…)
+ *   PRV_OPENROUTER_API_KEY — OpenRouter key (sk-or-…)
  *
- * Who triggers: PGM_Probe_Runner via the PGM_Probe_Provider interface.
- * Dependencies: PGM_Gateway_Client, PGM_Citation_Detector, PGM_Probe_Result.
+ * Who triggers: PRV_Probe_Runner via the PRV_Probe_Provider interface.
+ * Dependencies: PRV_Gateway_Client, PRV_Citation_Detector, PRV_Probe_Result.
  *
- * @see interface-pgm-probe-provider.php    — Interface this implements.
- * @see class-pgm-gateway-client.php        — Shared HTTP + retry logic.
- * @see class-pgm-citation-detector.php     — Domain extraction + detection.
+ * @see interface-prv-probe-provider.php    — Interface this implements.
+ * @see class-prv-gateway-client.php        — Shared HTTP + retry logic.
+ * @see class-prv-citation-detector.php     — Domain extraction + detection.
  * @see ARCHITECTURE.md                     — §Provider implementations.
  * @see CONTEXT.md                          — "Perplexity sonar", "citations".
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Perplexity_Provider implements PGM_Probe_Provider {
+class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 
 	/**
 	 * Model identifier passed to OpenRouter for Perplexity routing.
@@ -36,22 +36,22 @@ class PGM_Perplexity_Provider implements PGM_Probe_Provider {
 	const ESTIMATED_COST_PER_PROBE = 0.005;
 
 	/**
-	 * @var PGM_Gateway_Client
+	 * @var PRV_Gateway_Client
 	 */
-	private PGM_Gateway_Client $gateway;
+	private PRV_Gateway_Client $gateway;
 
 	/**
-	 * @var PGM_Citation_Detector
+	 * @var PRV_Citation_Detector
 	 */
-	private PGM_Citation_Detector $detector;
+	private PRV_Citation_Detector $detector;
 
 	/**
-	 * @param PGM_Gateway_Client|null    $gateway  Injected for testing; auto-created otherwise.
-	 * @param PGM_Citation_Detector|null $detector Injected for testing; auto-created otherwise.
+	 * @param PRV_Gateway_Client|null    $gateway  Injected for testing; auto-created otherwise.
+	 * @param PRV_Citation_Detector|null $detector Injected for testing; auto-created otherwise.
 	 */
-	public function __construct( ?PGM_Gateway_Client $gateway = null, ?PGM_Citation_Detector $detector = null ) {
-		$this->gateway  = $gateway  ?? new PGM_Gateway_Client();
-		$this->detector = $detector ?? new PGM_Citation_Detector();
+	public function __construct( ?PRV_Gateway_Client $gateway = null, ?PRV_Citation_Detector $detector = null ) {
+		$this->gateway  = $gateway  ?? new PRV_Gateway_Client();
+		$this->detector = $detector ?? new PRV_Citation_Detector();
 	}
 
 	/**
@@ -62,10 +62,10 @@ class PGM_Perplexity_Provider implements PGM_Probe_Provider {
 	 *
 	 * @param string $query
 	 *
-	 * @return PGM_Probe_Result
+	 * @return PRV_Probe_Result
 	 * @throws \RuntimeException On permanent API failure.
 	 */
-	public function probe( string $query ): PGM_Probe_Result {
+	public function probe( string $query ): PRV_Probe_Result {
 		$api_key = $this->resolve_api_key();
 
 		$body = array(
@@ -82,15 +82,15 @@ class PGM_Perplexity_Provider implements PGM_Probe_Provider {
 	}
 
 	/**
-	 * Parse the OpenRouter/Perplexity response into a PGM_Probe_Result.
+	 * Parse the OpenRouter/Perplexity response into a PRV_Probe_Result.
 	 *
 	 * Side effects: None.
 	 *
 	 * @param array<string, mixed> $data Decoded API response.
 	 *
-	 * @return PGM_Probe_Result
+	 * @return PRV_Probe_Result
 	 */
-	public function parse_response( array $data ): PGM_Probe_Result {
+	public function parse_response( array $data ): PRV_Probe_Result {
 		// Extract text excerpt from the first choice.
 		$content = '';
 		if ( isset( $data['choices'][0]['message']['content'] ) ) {
@@ -115,7 +115,7 @@ class PGM_Perplexity_Provider implements PGM_Probe_Provider {
 			$cost_usd = (float) $data['usage']['total_tokens'] * 0.000001;
 		}
 
-		return new PGM_Probe_Result( $raw_excerpt, $domains, $cited, $our_position, $cost_usd );
+		return new PRV_Probe_Result( $raw_excerpt, $domains, $cited, $our_position, $cost_usd );
 	}
 
 	/**
@@ -129,7 +129,7 @@ class PGM_Perplexity_Provider implements PGM_Probe_Provider {
 	 * {@inheritDoc}
 	 */
 	public function is_configured(): bool {
-		return defined( 'PGM_OPENROUTER_API_KEY' ) && '' !== PGM_OPENROUTER_API_KEY;
+		return defined( 'PRV_OPENROUTER_API_KEY' ) && '' !== PRV_OPENROUTER_API_KEY;
 	}
 
 	/**
@@ -139,11 +139,11 @@ class PGM_Perplexity_Provider implements PGM_Probe_Provider {
 	 * @throws \RuntimeException When the constant is not defined or empty.
 	 */
 	private function resolve_api_key(): string {
-		if ( ! defined( 'PGM_OPENROUTER_API_KEY' ) || '' === PGM_OPENROUTER_API_KEY ) {
+		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) || '' === PRV_OPENROUTER_API_KEY ) {
 			throw new \RuntimeException(
-				__( 'PGM_OPENROUTER_API_KEY constant is not defined. Add it to wp-config.php.', 'peptide-geo-monitor' )
+				__( 'PRV_OPENROUTER_API_KEY constant is not defined. Add it to wp-config.php.', 'pr-vision' )
 			);
 		}
-		return PGM_OPENROUTER_API_KEY;
+		return PRV_OPENROUTER_API_KEY;
 	}
 }

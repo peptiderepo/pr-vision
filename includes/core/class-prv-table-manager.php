@@ -2,25 +2,25 @@
 declare(strict_types=1);
 
 /**
- * Database table creation and schema versioning for PGM.
+ * Database table creation and schema versioning for PR Vision.
  *
- * Creates {prefix}pgm_ai_visibility via dbDelta (idempotent). Tracks the
- * schema version in the pgm_schema_version option so future migrations can
+ * Creates {prefix}prv_ai_visibility via dbDelta (idempotent). Tracks the
+ * schema version in the prv_schema_version option so future migrations can
  * detect when an upgrade is needed without destructive ALTER TABLE.
  *
- * Who triggers: PGM_Activator::activate() on plugin activation.
+ * Who triggers: PRV_Activator::activate() on plugin activation.
  * Dependencies: $wpdb global, dbDelta() (requires upgrade.php).
  *
- * @see class-pgm-activator.php — Calls create_table() on activation.
+ * @see class-prv-activator.php — Calls create_table() on activation.
  * @see ARCHITECTURE.md         — §Storage.
- * @package PeptideGeoMonitor
+ * @package PrVision
  */
-class PGM_Table_Manager {
+class PRV_Table_Manager {
 
 	/**
 	 * Name of the custom table (without $wpdb->prefix).
 	 */
-	const TABLE_BASE = 'pgm_ai_visibility';
+	const TABLE_BASE = 'prv_ai_visibility';
 
 	/**
 	 * Create or upgrade the AI-visibility table.
@@ -28,7 +28,7 @@ class PGM_Table_Manager {
 	 * Uses dbDelta to create or non-destructively alter the table.
 	 * Records the schema version in an option afterwards.
 	 *
-	 * Side effects: Writes to the database; sets pgm_schema_version option.
+	 * Side effects: Writes to the database; sets prv_schema_version option.
 	 *
 	 * @return void
 	 */
@@ -63,7 +63,7 @@ class PGM_Table_Manager {
 
 		dbDelta( $sql );
 
-		update_option( 'pgm_schema_version', PGM_SCHEMA_VERSION );
+		update_option( 'prv_schema_version', PRV_SCHEMA_VERSION );
 	}
 
 	/**

@@ -8,14 +8,14 @@ declare(strict_types=1);
  * WP-Cron probe schedule. Safe to call on re-activation — dbDelta is
  * idempotent and the cron schedule is only added when absent.
  *
- * Who triggers: register_activation_hook() in peptide-geo-monitor.php.
- * Dependencies: PGM_Table_Manager, PGM_Cron, PGM_Config.
+ * Who triggers: register_activation_hook() in pr-vision.php.
+ * Dependencies: PRV_Table_Manager, PRV_Cron, PRV_Config.
  *
- * @see class-pgm-table-manager.php — Database schema creation.
- * @see class-pgm-cron.php          — Cron scheduling.
- * @package PeptideGeoMonitor
+ * @see class-prv-table-manager.php — Database schema creation.
+ * @see class-prv-cron.php          — Cron scheduling.
+ * @package PrVision
  */
-class PGM_Activator {
+class PRV_Activator {
 
 	/**
 	 * Run all activation tasks.
@@ -25,8 +25,8 @@ class PGM_Activator {
 	 * @return void
 	 */
 	public static function activate(): void {
-		PGM_Table_Manager::create_table();
-		PGM_Config::seed_defaults();
-		PGM_Cron::schedule_weekly();
+		PRV_Table_Manager::create_table();
+		PRV_Config::seed_defaults();
+		PRV_Cron::schedule_weekly();
 	}
 }
