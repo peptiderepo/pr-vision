@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── PHP Syntax Check ─────────────────────────────────────────────
+  lint-php:
+    name: PHP Lint (${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [ '8.1', '8.2', '8.3' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Syntax check all PHP files
+        run: find . -name "*.php" -not -path "./vendor/*" | xargs -n 1 php -l
+
+      - name: Unit tests (lightweight, no PHPUnit)
+        run: |
+          for test in tests/unit/test-*.php; do
+            echo "=== Running $test ==="
+            php "$test"
+          done
+
+  # ── WordPress Coding Standards (PHP CodeSniffer) ──────────────────
+  lint-phpcs:
+    name: WordPress Coding Standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHPCS
+        run: composer run lint
+        continue-on-error: true
+
+  # ── 300-line file check ──────────────────────────────────────────
+  file-size:
+    name: 300-line file check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check no PHP file exceeds 300 lines
+        run: |
+          violations=0
+          while IFS= read -r file; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 300 ]; then
+              echo "VIOLATION: $file ($lines lines)"
+              violations=$((violations + 1))
+            fi
+          done < <(find . -name "*.php" -not -path "./vendor/*" -not -path "./tests/*")
+          if [ "$violations" -gt 0 ]; then
+            echo "$violations file(s) exceed 300 lines"
+            exit 1
+          fi
+          echo "All PHP files are 300 lines or fewer."
