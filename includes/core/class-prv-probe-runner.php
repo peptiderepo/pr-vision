@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -23,11 +24,15 @@ declare(strict_types=1);
 class PRV_Probe_Runner {
 
 	/**
+	 * Budget ledger for cost-cap enforcement.
+	 *
 	 * @var PRV_Cost_Ledger
 	 */
 	private PRV_Cost_Ledger $ledger;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param PRV_Cost_Ledger|null $ledger Injected for testing; auto-created otherwise.
 	 */
 	public function __construct( ?PRV_Cost_Ledger $ledger = null ) {
@@ -53,9 +58,9 @@ class PRV_Probe_Runner {
 		$models   = PRV_Config::get_models();
 
 		$counts = array(
-			'probed'          => 0,
-			'skipped_budget'  => 0,
-			'skipped_error'   => 0,
+			'probed'         => 0,
+			'skipped_budget' => 0,
+			'skipped_error'  => 0,
 		);
 
 		foreach ( $peptides as $peptide ) {
@@ -66,22 +71,23 @@ class PRV_Probe_Runner {
 					$provider = $this->resolve_provider( $model );
 
 					if ( null === $provider || ! $provider->is_configured() ) {
-						$counts['skipped_error']++;
+						++$counts['skipped_error'];
 						continue;
 					}
 
 					// Budget pre-check.
 					$estimated = $this->get_estimated_cost( $model );
 					if ( ! $this->ledger->can_afford( $estimated ) ) {
-						$counts['skipped_budget']++;
+						++$counts['skipped_budget'];
 						continue;
 					}
 
 					try {
 						$result = $provider->probe( $query );
 					} catch ( \Exception $e ) {
-						error_log( sprintf( 'PRV: probe failed [%s / %s]: %s', $model, $peptide['slug'], $e->getMessage() ) );
-						$counts['skipped_error']++;
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( sprintf( 'PRV: probe failed [%s / %s]: %s', $model, $peptide['slug'], $e->getMessage() ) );
+						++$counts['skipped_error'];
 						continue;
 					}
 
@@ -90,7 +96,7 @@ class PRV_Probe_Runner {
 						$this->ledger->update_row_cost( $row_id, $result->get_cost_usd() );
 					}
 
-					$counts['probed']++;
+					++$counts['probed'];
 				}
 			}
 		}
@@ -101,11 +107,11 @@ class PRV_Probe_Runner {
 	/**
 	 * Persist a single probe result to the database.
 	 *
-	 * @param string               $run_id      UUID for this run.
-	 * @param array{slug:string, label:string} $peptide Peptide config.
-	 * @param string               $model       Model identifier.
-	 * @param string               $intent_tpl  Raw intent template string.
-	 * @param PRV_Probe_Result     $result      Probe result.
+	 * @param string          $run_id     UUID for this run.
+	 * @param array<string,string> $peptide Peptide config with slug and label.
+	 * @param string          $model      Model identifier.
+	 * @param string          $intent_tpl Raw intent template string.
+	 * @param PRV_Probe_Result $result    Probe result.
 	 *
 	 * @return int Inserted row ID, or 0 on failure.
 	 */
@@ -118,17 +124,17 @@ class PRV_Probe_Runner {
 		$wpdb->insert(
 			$table,
 			array(
-				'run_id'        => $run_id,
-				'captured_at'   => current_time( 'mysql', true ),
-				'peptide_slug'  => $peptide['slug'],
-				'peptide_label' => $peptide['label'],
-				'model'         => $model,
-				'prompt_intent' => $intent_tpl,
-				'cited'         => $result->is_cited() ? 1 : 0,
-				'our_position'  => $result->get_our_position(),
+				'run_id'         => $run_id,
+				'captured_at'    => current_time( 'mysql', true ),
+				'peptide_slug'   => $peptide['slug'],
+				'peptide_label'  => $peptide['label'],
+				'model'          => $model,
+				'prompt_intent'  => $intent_tpl,
+				'cited'          => $result->is_cited() ? 1 : 0,
+				'our_position'   => $result->get_our_position(),
 				'source_domains' => wp_json_encode( $result->get_source_domains() ),
-				'raw_excerpt'   => $result->get_raw_excerpt(),
-				'cost_usd'      => number_format( $result->get_cost_usd(), 8, '.', '' ),
+				'raw_excerpt'    => $result->get_raw_excerpt(),
+				'cost_usd'       => number_format( $result->get_cost_usd(), 8, '.', '' ),
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
 		);

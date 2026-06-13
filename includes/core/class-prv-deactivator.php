@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**

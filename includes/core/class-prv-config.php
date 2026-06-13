@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -85,18 +86,54 @@ class PRV_Config {
 	 */
 	private static function default_peptides(): array {
 		return array(
-			array( 'slug' => 'bpc-157', 'label' => 'BPC-157' ),
-			array( 'slug' => 'tb-500', 'label' => 'TB-500' ),
-			array( 'slug' => 'mk-677', 'label' => 'MK-677' ),
-			array( 'slug' => 'cjc-1295', 'label' => 'CJC-1295' ),
-			array( 'slug' => 'ghrp-6', 'label' => 'GHRP-6' ),
-			array( 'slug' => 'ipamorelin', 'label' => 'Ipamorelin' ),
-			array( 'slug' => 'semaglutide', 'label' => 'Semaglutide' ),
-			array( 'slug' => 'tirzepatide', 'label' => 'Tirzepatide' ),
-			array( 'slug' => 'selank', 'label' => 'Selank' ),
-			array( 'slug' => 'semax', 'label' => 'Semax' ),
-			array( 'slug' => 'nad-plus', 'label' => 'NAD+' ),
-			array( 'slug' => 'aod-9604', 'label' => 'AOD-9604' ),
+			array(
+				'slug'  => 'bpc-157',
+				'label' => 'BPC-157',
+			),
+			array(
+				'slug'  => 'tb-500',
+				'label' => 'TB-500',
+			),
+			array(
+				'slug'  => 'mk-677',
+				'label' => 'MK-677',
+			),
+			array(
+				'slug'  => 'cjc-1295',
+				'label' => 'CJC-1295',
+			),
+			array(
+				'slug'  => 'ghrp-6',
+				'label' => 'GHRP-6',
+			),
+			array(
+				'slug'  => 'ipamorelin',
+				'label' => 'Ipamorelin',
+			),
+			array(
+				'slug'  => 'semaglutide',
+				'label' => 'Semaglutide',
+			),
+			array(
+				'slug'  => 'tirzepatide',
+				'label' => 'Tirzepatide',
+			),
+			array(
+				'slug'  => 'selank',
+				'label' => 'Selank',
+			),
+			array(
+				'slug'  => 'semax',
+				'label' => 'Semax',
+			),
+			array(
+				'slug'  => 'nad-plus',
+				'label' => 'NAD+',
+			),
+			array(
+				'slug'  => 'aod-9604',
+				'label' => 'AOD-9604',
+			),
 		);
 	}
 

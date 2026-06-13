@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -36,21 +37,27 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 	const ESTIMATED_COST_PER_PROBE = 0.005;
 
 	/**
+	 * HTTP gateway client.
+	 *
 	 * @var PRV_Gateway_Client
 	 */
 	private PRV_Gateway_Client $gateway;
 
 	/**
+	 * Citation domain detector.
+	 *
 	 * @var PRV_Citation_Detector
 	 */
 	private PRV_Citation_Detector $detector;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param PRV_Gateway_Client|null    $gateway  Injected for testing; auto-created otherwise.
 	 * @param PRV_Citation_Detector|null $detector Injected for testing; auto-created otherwise.
 	 */
 	public function __construct( ?PRV_Gateway_Client $gateway = null, ?PRV_Citation_Detector $detector = null ) {
-		$this->gateway  = $gateway  ?? new PRV_Gateway_Client();
+		$this->gateway  = $gateway ?? new PRV_Gateway_Client();
 		$this->detector = $detector ?? new PRV_Citation_Detector();
 	}
 
@@ -60,7 +67,7 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 	 * Sends the query as a user message to perplexity/sonar via OpenRouter.
 	 * Parses the citations[] array from the OpenRouter response envelope.
 	 *
-	 * @param string $query
+	 * @param string $query The search query to probe.
 	 *
 	 * @return PRV_Probe_Result
 	 * @throws \RuntimeException On permanent API failure.
@@ -69,9 +76,12 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 		$api_key = $this->resolve_api_key();
 
 		$body = array(
-			'model'    => self::MODEL,
-			'messages' => array(
-				array( 'role' => 'user', 'content' => $query ),
+			'model'      => self::MODEL,
+			'messages'   => array(
+				array(
+					'role'    => 'user',
+					'content' => $query,
+				),
 			),
 			'max_tokens' => 512,
 		);
@@ -135,11 +145,12 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 	/**
 	 * Retrieve the OpenRouter API key from wp-config constants.
 	 *
-	 * @return string
+	 * @return string The API key.
 	 * @throws \RuntimeException When the constant is not defined or empty.
 	 */
 	private function resolve_api_key(): string {
 		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) || '' === PRV_OPENROUTER_API_KEY ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new \RuntimeException(
 				__( 'PRV_OPENROUTER_API_KEY constant is not defined. Add it to wp-config.php.', 'pr-vision' )
 			);

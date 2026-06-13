@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -26,11 +27,15 @@ declare(strict_types=1);
 class PRV_Ai_Visibility_Collector implements PRV_Data_Collector {
 
 	/**
+	 * Budget ledger for MTD cost lookup.
+	 *
 	 * @var PRV_Cost_Ledger
 	 */
 	private PRV_Cost_Ledger $ledger;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param PRV_Cost_Ledger|null $ledger Injected for testing.
 	 */
 	public function __construct( ?PRV_Cost_Ledger $ledger = null ) {
@@ -71,7 +76,7 @@ class PRV_Ai_Visibility_Collector implements PRV_Data_Collector {
 		$trendline = array();
 		foreach ( (array) $run_rows as $row ) {
 			$trendline[] = array(
-				'run_id'      => (string) $row['run_id'],
+				'run_id'     => (string) $row['run_id'],
 				'captured_at' => (string) $row['captured_at'],
 				'score'       => $this->compute_score(
 					(int) $row['cited_count'],

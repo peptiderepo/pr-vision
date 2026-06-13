@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -18,11 +19,13 @@ declare(strict_types=1);
 class PRV_Probe_Result {
 
 	/**
-	 * @param string        $raw_excerpt    First ~500 chars of the LLM's response.
-	 * @param string[]      $source_domains Domains extracted from the provider's citations.
-	 * @param bool          $cited          Whether peptiderepo.com appears in source_domains.
-	 * @param int|null      $our_position   1-based position of peptiderepo.com in sources, or null.
-	 * @param float         $cost_usd       Estimated call cost in USD.
+	 * Constructor.
+	 *
+	 * @param string   $raw_excerpt    First ~500 chars of the LLM's response.
+	 * @param string[] $source_domains Domains extracted from the provider's citations.
+	 * @param bool     $cited          Whether peptiderepo.com appears in source_domains.
+	 * @param int|null $our_position   1-based position of peptiderepo.com in sources, or null.
+	 * @param float    $cost_usd       Estimated call cost in USD.
 	 */
 	public function __construct(
 		private readonly string $raw_excerpt,
@@ -33,6 +36,8 @@ class PRV_Probe_Result {
 	) {}
 
 	/**
+	 * Get the raw LLM response excerpt.
+	 *
 	 * @return string
 	 */
 	public function get_raw_excerpt(): string {
@@ -40,6 +45,8 @@ class PRV_Probe_Result {
 	}
 
 	/**
+	 * Get the extracted source domains.
+	 *
 	 * @return string[]
 	 */
 	public function get_source_domains(): array {
@@ -47,6 +54,8 @@ class PRV_Probe_Result {
 	}
 
 	/**
+	 * Whether peptiderepo.com was cited.
+	 *
 	 * @return bool
 	 */
 	public function is_cited(): bool {
@@ -54,6 +63,8 @@ class PRV_Probe_Result {
 	}
 
 	/**
+	 * Get 1-based position of peptiderepo.com in source list.
+	 *
 	 * @return int|null 1-based position or null when not cited.
 	 */
 	public function get_our_position(): ?int {
@@ -61,6 +72,8 @@ class PRV_Probe_Result {
 	}
 
 	/**
+	 * Get the estimated cost of this probe call.
+	 *
 	 * @return float Estimated cost in USD.
 	 */
 	public function get_cost_usd(): float {

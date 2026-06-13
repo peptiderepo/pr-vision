@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -33,35 +34,44 @@ class PRV_OpenRouter_Provider implements PRV_Probe_Provider {
 	const ESTIMATED_COST_PER_PROBE = 0.003;
 
 	/**
-	 * @var string OpenRouter model identifier (e.g. "openai/gpt-4o-search-preview").
+	 * OpenRouter model identifier (e.g. "openai/gpt-4o-search-preview").
+	 *
+	 * @var string
 	 */
 	private string $model;
 
 	/**
+	 * HTTP gateway client.
+	 *
 	 * @var PRV_Gateway_Client
 	 */
 	private PRV_Gateway_Client $gateway;
 
 	/**
+	 * Citation domain detector.
+	 *
 	 * @var PRV_Citation_Detector
 	 */
 	private PRV_Citation_Detector $detector;
 
 	/**
-	 * @param string                 $model    OpenRouter model identifier.
+	 * Constructor.
+	 *
+	 * @param string                     $model    OpenRouter model identifier.
 	 * @param PRV_Gateway_Client|null    $gateway  Injected for testing.
 	 * @param PRV_Citation_Detector|null $detector Injected for testing.
 	 */
 	public function __construct( string $model, ?PRV_Gateway_Client $gateway = null, ?PRV_Citation_Detector $detector = null ) {
 		$this->model    = $model;
-		$this->gateway  = $gateway  ?? new PRV_Gateway_Client();
+		$this->gateway  = $gateway ?? new PRV_Gateway_Client();
 		$this->detector = $detector ?? new PRV_Citation_Detector();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @param string $query
+	 * @param string $query The search query to probe.
+	 *
 	 * @return PRV_Probe_Result
 	 * @throws \RuntimeException On permanent API failure.
 	 */
@@ -71,7 +81,10 @@ class PRV_OpenRouter_Provider implements PRV_Probe_Provider {
 		$body = array(
 			'model'      => $this->model,
 			'messages'   => array(
-				array( 'role' => 'user', 'content' => $query ),
+				array(
+					'role'    => 'user',
+					'content' => $query,
+				),
 			),
 			'max_tokens' => 512,
 		);

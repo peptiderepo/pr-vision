@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -60,8 +61,8 @@ class PRV_Cost_Ledger {
 	 * @return bool True when the call can proceed within budget.
 	 */
 	public function can_afford( float $estimated_cost_usd ): bool {
-		$cap    = PRV_Config::get_monthly_budget_usd();
-		$spent  = $this->get_month_to_date_usd();
+		$cap   = PRV_Config::get_monthly_budget_usd();
+		$spent = $this->get_month_to_date_usd();
 		return ( $spent + $estimated_cost_usd ) <= $cap;
 	}
 
@@ -95,7 +96,7 @@ class PRV_Cost_Ledger {
 
 		$table = PRV_Table_Manager::get_table_name();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->update(
 			$table,
 			array( 'cost_usd' => number_format( $cost_usd, 8, '.', '' ) ),

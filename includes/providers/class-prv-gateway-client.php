@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -97,13 +98,14 @@ class PRV_Gateway_Client {
 					$last_error = sprintf( 'HTTP %d', $status );
 					if ( $attempt < PRV_MAX_RETRIES ) {
 						$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-						$delay = $retry_after ? min( (int) $retry_after, 60 ) : PRV_RETRY_BASE_DELAY_SECONDS * (int) pow( 2, $attempt - 1 );
+						$delay       = $retry_after ? min( (int) $retry_after, 60 ) : PRV_RETRY_BASE_DELAY_SECONDS * (int) pow( 2, $attempt - 1 );
 						sleep( $delay );
 					}
 					continue;
 				}
 
 				if ( $status >= 400 ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 					throw new \RuntimeException(
 						sprintf( 'PR Vision gateway HTTP %d: %s', $status, substr( $raw_body, 0, 300 ) )
 					);
@@ -120,6 +122,7 @@ class PRV_Gateway_Client {
 			remove_action( 'http_api_curl', $curl_filter, 99 );
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		throw new \RuntimeException(
 			sprintf( 'PR Vision: gateway failed after %d attempts. Last: %s', PRV_MAX_RETRIES, $last_error )
 		);

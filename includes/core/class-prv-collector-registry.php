@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -60,7 +61,7 @@ class PRV_Collector_Registry {
 	/**
 	 * Register a data collector.
 	 *
-	 * @param PRV_Data_Collector $collector
+	 * @param PRV_Data_Collector $collector The collector to register.
 	 *
 	 * @return void
 	 */
@@ -71,8 +72,8 @@ class PRV_Collector_Registry {
 	/**
 	 * Register a dashboard panel.
 	 *
-	 * @param string               $key   Panel key (must match a collector key).
-	 * @param PRV_Dashboard_Panel  $panel
+	 * @param string              $key   Panel key (must match a collector key).
+	 * @param PRV_Dashboard_Panel $panel The panel to register.
 	 *
 	 * @return void
 	 */

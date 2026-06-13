@@ -13,6 +13,7 @@
  * @see ARCHITECTURE.md — Full data flow and file tree.
  * @see CONVENTIONS.md  — Naming patterns and extension guide.
  * @see CONTEXT.md      — Domain glossary incl. the visibility score formula.
+ * @package PrVision
  */
 
 declare(strict_types=1);
@@ -29,22 +30,22 @@ define( 'PRV_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PRV_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'PRV_SCHEMA_VERSION', 1 );
 
-/** @var int Maximum HTTP retries for LLM API calls. */
+/** Maximum HTTP retries for LLM API calls. @var int */
 define( 'PRV_MAX_RETRIES', 3 );
 
-/** @var int API request timeout in seconds. */
+/** API request timeout in seconds. @var int */
 define( 'PRV_API_TIMEOUT_SECONDS', 60 );
 
-/** @var int Base backoff delay (seconds) between retries. */
+/** Base backoff delay (seconds) between retries. @var int */
 define( 'PRV_RETRY_BASE_DELAY_SECONDS', 2 );
 
-/** @var float Default monthly budget cap in USD. */
+/** Default monthly budget cap in USD. @var float */
 define( 'PRV_DEFAULT_MONTHLY_BUDGET_USD', 5.0 );
 
-/** @var string WP-Cron hook name for the weekly probe run. */
+/** WP-Cron hook name for the weekly probe run. @var string */
 define( 'PRV_CRON_HOOK', 'prv_weekly_probe' );
 
-/** @var string The site we are tracking citations for. */
+/** The site we are tracking citations for. @var string */
 define( 'PRV_TARGET_DOMAIN', 'peptiderepo.com' );
 
 /* ── Autoloader ───────────────────────────────────────────────────────── */

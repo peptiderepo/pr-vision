@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -123,10 +124,10 @@ class PRV_Admin_Page {
 
 		$redirect = add_query_arg(
 			array(
-				'page'           => self::MENU_SLUG,
-				'prv_run_done'   => 1,
-				'prv_probed'     => (int) $counts['probed'],
-				'prv_skipped'    => (int) ( $counts['skipped_budget'] + $counts['skipped_error'] ),
+				'page'        => self::MENU_SLUG,
+				'prv_run_done' => 1,
+				'prv_probed'  => (int) $counts['probed'],
+				'prv_skipped' => (int) ( $counts['skipped_budget'] + $counts['skipped_error'] ),
 			),
 			admin_url( 'admin.php' )
 		);
@@ -183,10 +184,10 @@ class PRV_Admin_Page {
 		if ( empty( $_GET['prv_run_done'] ) ) {
 			return;
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$probed  = (int) ( $_GET['prv_probed'] ?? 0 );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$skipped = (int) ( $_GET['prv_skipped'] ?? 0 );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$probed  = isset( $_GET['prv_probed'] ) ? absint( wp_unslash( $_GET['prv_probed'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$skipped = isset( $_GET['prv_skipped'] ) ? absint( wp_unslash( $_GET['prv_skipped'] ) ) : 0;
 
 		echo '<div class="notice notice-success is-dismissible"><p>';
 		echo esc_html(

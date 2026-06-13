@@ -1,10 +1,11 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
  * Seam: contract for all PR Vision data collectors.
  *
- * v1 implements only PRV_Ai_Visibility_Collector. Future collectors
+ * V1 implements only PRV_Ai_Visibility_Collector. Future collectors
  * (keyword rankings, schema coverage, technical-SEO) implement this
  * interface and register themselves with PRV_Collector_Registry without
  * changing the dashboard shell.

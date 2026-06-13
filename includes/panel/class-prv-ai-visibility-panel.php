@@ -1,4 +1,5 @@
 <?php
+/** @package PrVision */
 declare(strict_types=1);
 
 /**
@@ -30,11 +31,11 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 	 * @return void
 	 */
 	public function render( array $data ): void {
-		$trendline       = is_array( $data['trendline'] ?? null ) ? $data['trendline'] : array();
-		$standings       = is_array( $data['standings'] ?? null ) ? $data['standings'] : array();
-		$last_run_at     = isset( $data['last_run_at'] ) && $data['last_run_at'] ? esc_html( (string) $data['last_run_at'] ) : esc_html__( 'Never', 'pr-vision' );
-		$mtd_cost        = isset( $data['mtd_cost_usd'] ) ? (float) $data['mtd_cost_usd'] : 0.0;
-		$cap             = isset( $data['monthly_cap_usd'] ) ? (float) $data['monthly_cap_usd'] : PRV_DEFAULT_MONTHLY_BUDGET_USD;
+		$trendline   = is_array( $data['trendline'] ?? null ) ? $data['trendline'] : array();
+		$standings   = is_array( $data['standings'] ?? null ) ? $data['standings'] : array();
+		$last_run_at = isset( $data['last_run_at'] ) && $data['last_run_at'] ? esc_html( (string) $data['last_run_at'] ) : esc_html__( 'Never', 'pr-vision' );
+		$mtd_cost    = isset( $data['mtd_cost_usd'] ) ? (float) $data['mtd_cost_usd'] : 0.0;
+		$cap         = isset( $data['monthly_cap_usd'] ) ? (float) $data['monthly_cap_usd'] : PRV_DEFAULT_MONTHLY_BUDGET_USD;
 
 		$this->render_proxy_note();
 		$this->render_meta_bar( $last_run_at, $mtd_cost, $cap );
@@ -96,7 +97,7 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 		$labels = array();
 		$scores = array();
 		foreach ( $trendline as $point ) {
-			$labels[] = esc_js( date( 'M j', strtotime( $point['captured_at'] ) ) );
+			$labels[] = esc_js( gmdate( 'M j', (int) strtotime( $point['captured_at'] ) ) );
 			$scores[] = (float) $point['score'];
 		}
 
@@ -104,8 +105,10 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 		$scores_json = wp_json_encode( $scores );
 
 		echo '<canvas id="prv-trendline-chart" height="120"></canvas>';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '<script>document.addEventListener("DOMContentLoaded",function(){';
 		echo 'var ctx=document.getElementById("prv-trendline-chart").getContext("2d");';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo 'new Chart(ctx,{type:"line",data:{labels:' . $labels_json . ',datasets:[{label:"Visibility Score",data:' . $scores_json . ',borderColor:"#2271b1",tension:0.3,fill:false}]},options:{scales:{y:{min:0,max:1,title:{display:true,text:"Score"}}},plugins:{legend:{display:false}}}});';
 		echo '});</script>';
 		echo '</div>';
