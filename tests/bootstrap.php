@@ -146,10 +146,6 @@ function sanitize_text_field( string $str ): string {
 	return trim( $str );
 }
 
-function number_format( $num, $decimals = 0, string $decimal_point = '.', string $thousands_sep = ',' ): string {
-	return \number_format( $num, $decimals, $decimal_point, $thousands_sep );
-}
-
 function current_user_can( string $cap ): bool {
 	return true;
 }
