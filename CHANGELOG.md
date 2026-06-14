@@ -103,3 +103,25 @@ Admin/Settings interface + correctness fixes. All adversarial-QA must-fixes addr
 - **P1-D/E:** Expanded inline associative arrays to multi-line in `class-prv-config.php`, `class-prv-probe-runner.php`, `class-prv-settings-renderer.php`, `class-prv-model-test-ajax.php`; fixed param-comment spacing in `class-prv-model-registry.php`; capitalised docblock long-description first word.
 - **PHPCS compliance:** Expanded remaining 5 inline associative arrays in `class-prv-settings-page.php` (`add_query_arg` calls + `PRV_Model_Registry::update` data array) to multi-line with trailing comma; corrected `@param` column alignment in `class-prv-probe-runner.php:update_api_key_status` and `class-prv-model-registry.php:update_health` to match longest-type rule. PHPCS: 0 errors / 0 warnings.
 - **300-line split:** extracted `handle_save`, `handle_model_add`, `handle_model_update`, `handle_model_remove` from `class-prv-settings-page.php` (346 lines) into new `class-prv-settings-controller.php` (`PRV_Settings_Controller`); settings-page delegates via nonce callback. All `phpcs:disable/enable WordPress.Security.NonceVerification.Missing` wrappers carried with the moved handlers. Both files now ≤213 lines; no file exceeds 300 lines.
+
+---
+
+## [0.2.1] — 2026-06-14
+
+Dashboard visuals + deploy pipeline.
+
+### Added
+
+- **KPI bento bar on dashboard:** Three-tile band replacing the flat meta-bar. Score tile carries a **run-health pill** (dot + word: "All models healthy" / "N model(s) degraded" / "No run yet") sourced from `PRV_Model_Registry` health fields via `PRV_Ai_Visibility_Collector::collect_model_health()`. Cost tile carries the MTD meter + optional truncation badge. Last-run tile shows timestamp.
+- **Config-change trendline marker:** Inline Chart.js plugin (`configMarker`) draws a vertical dashed orange line + pin circle at every `config_version` boundary in the trendline data. A legend swatch and a plain-language annotation note appear below the chart when breaks exist.
+- **`PRV_Dashboard_Renderer`:** New class (`includes/panel/class-prv-dashboard-renderer.php`) owns the bento tiles and trendline rendering; `PRV_Ai_Visibility_Panel` delegates to it. Split keeps all files ≤ 300 lines.
+- **Collector extensions:** `PRV_Ai_Visibility_Collector::collect()` now returns two new keys: `last_run_counts` (per-model health map from `PRV_Model_Registry`) and `config_versions` (all version records from `PRV_Config_Version`). The trendline query now includes `MIN(config_version)` per `run_id`.
+- **Admin page CSS:** `PRV_Admin_Page::get_dashboard_css()` returns the "Assay" dark palette CSS (CSS custom-property palette, bento grid, health pills, chart legend swatches, cfg-note, standings status chips) scoped to `.prv-*` selectors.
+- **`.github/workflows/deploy.yml`:** Standalone rsync deploy — on push to `main`: runs CI as prerequisite, rsyncs the plugin to `~/domains/peptiderepo.com/public_html/wp-content/plugins/pr-vision/` (excludes `.git .github tests phpunit.xml.dist composer.json composer.lock vendor phpcs.xml.dist *.md`), purges LiteSpeed cache via WP-CLI, health-checks (200 or 403). Uses repo secrets `SSH_HOST`/`SSH_USERNAME`/`SSH_PRIVATE_KEY`/`SSH_PORT`. Standalone — does NOT wire into the smoke-gated shared pipeline.
+- **`tests/unit/test-dashboard-panel.php`:** 27 assertions covering: `derive_health_pill_state` (all states + edge cases), `PRV_Dashboard_Renderer::build_delta_html` (up/down/flat/null), collector `config_version` field on trendline rows, collector `last_run_counts` and `config_versions` keys, null config_version graceful handling, model health payload from registry, trendline output capture (marker present/absent, noscript fallback element).
+
+### Changed
+
+- `PRV_Ai_Visibility_Panel` refactored: bento and trendline rendering extracted to `PRV_Dashboard_Renderer`; panel is now a thin orchestrator (237 lines). No interface change.
+- `PRV_Admin_Page::enqueue_assets()` now calls `get_dashboard_css()` for the "Assay" palette CSS instead of the legacy inline style block.
+- Version bumped to **0.2.1**.

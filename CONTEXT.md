@@ -1,6 +1,6 @@
 # Context — Domain Glossary (PR Vision)
 
-**Version:** 0.2.0 | **Last updated:** 2026-06-14
+**Version:** 0.2.1 | **Last updated:** 2026-06-14
 
 This file is the ubiquitous-language glossary for `pr-vision`. Every term below has a precise meaning within this codebase. AI agents and human contributors should use this terminology consistently.
 

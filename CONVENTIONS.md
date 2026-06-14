@@ -1,6 +1,6 @@
 # Conventions — PR Vision
 
-**Version:** 0.1.1 | **Last updated:** 2026-06-13
+**Version:** 0.2.1 | **Last updated:** 2026-06-14
 
 Applies to all contributors and AI agents working in this repo. Where this document and `AGENT-OPERATING-STANDARD.md` conflict on process, the Standard wins; this document wins on code style.
 

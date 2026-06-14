@@ -47,12 +47,24 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
+          tools: composer:v2, phpcs
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install WordPress Coding Standards (global)
+        run: |
+          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --no-interaction \
+            "dealerdirect/phpcodesniffer-composer-installer:^1.0" \
+            "wp-coding-standards/wpcs:^3.0" \
+            "phpcsstandards/phpcsutils:^1.0"
 
       - name: Run PHPCS
-        run: composer run lint
+        run: |
+          phpcs --standard=phpcs.xml.dist \
+            --extensions=php \
+            --ignore=vendor/*,tests/*,node_modules/* \
+            --warning-severity=0 \
+            --report=full \
+            includes/ pr-vision.php uninstall.php
 
   # ── 300-line file check ──────────────────────────────────────────
   file-size:

@@ -16,7 +16,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
 
-define( 'PRV_VERSION', '0.2.0' );
+// WordPress DB result-format constants.
+if ( ! defined( 'ARRAY_A' ) ) {
+	define( 'ARRAY_A', 'ARRAY_A' );
+}
+if ( ! defined( 'OBJECT' ) ) {
+	define( 'OBJECT', 'OBJECT' );
+}
+if ( ! defined( 'ARRAY_N' ) ) {
+	define( 'ARRAY_N', 'ARRAY_N' );
+}
+
+define( 'PRV_VERSION', '0.2.1' );
 define( 'PRV_PLUGIN_FILE', __DIR__ . '/../pr-vision.php' );
 define( 'PRV_PLUGIN_DIR', realpath( __DIR__ . '/..' ) . '/' );
 define( 'PRV_PLUGIN_URL', 'http://example.test/wp-content/plugins/pr-vision/' );
@@ -137,8 +148,10 @@ function current_time( string $type, bool $gmt = false ): string {
 function home_url( string $path = '' ): string { return 'http://example.test' . $path; }
 
 function __( string $text, string $domain = 'default' ): string { return $text; }
+function _n( string $single, string $plural, int $number, string $domain = 'default' ): string { return 1 === $number ? $single : $plural; }
 function esc_html( string $text ): string { return htmlspecialchars( $text, ENT_QUOTES ); }
 function esc_html__( string $text, string $domain = 'default' ): string { return esc_html( $text ); }
+function esc_attr__( string $text, string $domain = 'default' ): string { return esc_attr( $text ); }
 function esc_attr( string $text ): string { return htmlspecialchars( $text, ENT_QUOTES ); }
 function esc_textarea( string $text ): string { return htmlspecialchars( $text, ENT_QUOTES ); }
 function esc_js( string $text ): string { return addslashes( $text ); }
