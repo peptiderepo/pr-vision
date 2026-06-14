@@ -1,6 +1,6 @@
 # Architecture — PR Vision
 
-**Version:** 0.2.0 | **Last updated:** 2026-06-14
+**Version:** 0.2.1 | **Last updated:** 2026-06-14
 
 ---
 
@@ -55,7 +55,8 @@ pr-vision/
 │   │   └── class-prv-ai-visibility-collector.php  # AI-visibility data from DB
 │   └── panel/
 │       ├── interface-prv-dashboard-panel.php # render(data): void seam
-│       └── class-prv-ai-visibility-panel.php # Renders trendline + standings
+│       ├── class-prv-ai-visibility-panel.php  # [v0.2.1] Orchestrates render; delegates to PRV_Dashboard_Renderer
+│       └── class-prv-dashboard-renderer.php     # [v0.2.1] Bento tiles (run-health pill) + trendline config-change markers
 ├── tests/
 │   ├── bootstrap.php               # WP-stub bootstrap (no PHPUnit)
 │   └── unit/
@@ -71,7 +72,8 @@ pr-vision/
 │       ├── test-config-version.php      # [v0.2] Hash, bump, version stamp
 │       ├── test-projected-cost.php      # [v0.2] probe_count, over_cap, truncation flag
 │       └── test-cron-reschedule.php     # [v0.2] Reschedule, idempotent, tick guard
-└── .github/workflows/ci.yml        # PHP lint matrix + PHPCS + 300-line check
+├── .github/workflows/ci.yml        # PHP lint matrix + PHPCS + 300-line check
+└── .github/workflows/deploy.yml    # [v0.2.1] Standalone rsync deploy to Hostinger PROD (CI gated)
 ```
 
 ---

@@ -8,25 +8,49 @@
 declare(strict_types=1);
 
 /**
- * AI-visibility dashboard panel — renders the PR Vision admin page.
+ * AI-visibility dashboard panel — orchestrates the PR Vision admin page.
  *
- * Renders four sections:
+ * Renders five sections by delegating the visual heavy-lifting to helper classes:
  * 1. Proxy-metric disclaimer note.
- * 2. Chart.js trendline of visibility score across runs.
- * 3. Per-peptide standings table (cited, position, top competitor domains).
- * 4. MTD cost vs cap + last-run time.
+ * 2. KPI bento bar (score tile with run-health pill, cost tile, last-run tile)
+ *    — via PRV_Dashboard_Renderer::render_bento().
+ * 3. Chart.js trendline with config-change vertical markers
+ *    — via PRV_Dashboard_Renderer::render_trendline().
+ * 4. Per-peptide standings table.
  *
- * All output is escaped. Chart.js is enqueued via PRV_Admin_Page.
+ * The run-health pill (score tile) and config-change markers (trendline) are
+ * the two v0.2.1 additions.
+ *
+ * Chart.js is enqueued via PRV_Admin_Page. The chart sits in a fixed-height box
+ * and degrades gracefully: if Chart.js is unavailable the typeof guard adds
+ * .prv-noscript, hiding the canvas and showing a fallback note in the same space.
  *
  * Who triggers: PRV_Admin_Page::render_page() via PRV_Collector_Registry.
- * Dependencies: PRV_Ai_Visibility_Collector (data format contract).
+ * Dependencies: PRV_Ai_Visibility_Collector (data format), PRV_Dashboard_Renderer.
  *
  * @see interface-prv-dashboard-panel.php      — Interface this implements.
  * @see class-prv-ai-visibility-collector.php  — Produces the $data array.
+ * @see class-prv-dashboard-renderer.php       — Renders bento + trendline.
  * @see class-prv-admin-page.php               — Enqueues Chart.js; calls render().
  * @package PrVision
  */
 class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
+
+	/**
+	 * Visual renderer for the bento tiles and trendline.
+	 *
+	 * @var PRV_Dashboard_Renderer
+	 */
+	private PRV_Dashboard_Renderer $renderer;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param PRV_Dashboard_Renderer|null $renderer Injected for testing; auto-created otherwise.
+	 */
+	public function __construct( ?PRV_Dashboard_Renderer $renderer = null ) {
+		$this->renderer = $renderer ?? new PRV_Dashboard_Renderer();
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -36,15 +60,16 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 	 * @return void
 	 */
 	public function render( array $data ): void {
-		$trendline   = is_array( $data['trendline'] ?? null ) ? $data['trendline'] : array();
-		$standings   = is_array( $data['standings'] ?? null ) ? $data['standings'] : array();
-		$last_run_at = isset( $data['last_run_at'] ) && $data['last_run_at'] ? esc_html( (string) $data['last_run_at'] ) : esc_html__( 'Never', 'pr-vision' );
-		$mtd_cost    = isset( $data['mtd_cost_usd'] ) ? (float) $data['mtd_cost_usd'] : 0.0;
-		$cap         = isset( $data['monthly_cap_usd'] ) ? (float) $data['monthly_cap_usd'] : PRV_DEFAULT_MONTHLY_BUDGET_USD;
+		$trendline       = is_array( $data['trendline'] ?? null ) ? $data['trendline'] : array();
+		$standings       = is_array( $data['standings'] ?? null ) ? $data['standings'] : array();
+		$last_run_at     = isset( $data['last_run_at'] ) && $data['last_run_at'] ? esc_html( (string) $data['last_run_at'] ) : esc_html__( 'Never', 'pr-vision' );
+		$mtd_cost        = isset( $data['mtd_cost_usd'] ) ? (float) $data['mtd_cost_usd'] : 0.0;
+		$cap             = isset( $data['monthly_cap_usd'] ) ? (float) $data['monthly_cap_usd'] : PRV_DEFAULT_MONTHLY_BUDGET_USD;
+		$last_run_counts = is_array( $data['last_run_counts'] ?? null ) ? $data['last_run_counts'] : array();
 
 		$this->render_proxy_note();
-		$this->render_meta_bar( $last_run_at, $mtd_cost, $cap );
-		$this->render_trendline( $trendline );
+		$this->render_bento_band( $trendline, $standings, $last_run_at, $mtd_cost, $cap, $last_run_counts );
+		$this->renderer->render_trendline( $trendline );
 		$this->render_standings( $standings );
 	}
 
@@ -68,55 +93,53 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 	}
 
 	/**
-	 * Render the run metadata bar (last run, cost, cap).
+	 * Prepare bento-band data and delegate rendering to PRV_Dashboard_Renderer.
 	 *
-	 * @param string $last_run_at Formatted last-run timestamp or "Never".
-	 * @param float  $mtd_cost    Month-to-date spend in USD.
-	 * @param float  $cap         Monthly cap in USD.
-	 *
-	 * @return void
-	 */
-	private function render_meta_bar( string $last_run_at, float $mtd_cost, float $cap ): void {
-		$pct = $cap > 0 ? min( 100.0, round( $mtd_cost / $cap * 100, 1 ) ) : 0;
-		echo '<div class="prv-meta-bar">';
-		echo '<span class="prv-meta-item"><strong>' . esc_html__( 'Last run:', 'pr-vision' ) . '</strong> ' . esc_html( $last_run_at ) . '</span>';
-		echo '<span class="prv-meta-item"><strong>' . esc_html__( 'MTD cost:', 'pr-vision' ) . '</strong> $' . esc_html( number_format( $mtd_cost, 4 ) ) . ' / $' . esc_html( number_format( $cap, 2 ) ) . ' (' . esc_html( $pct ) . '% of cap)</span>';
-		echo '</div>';
-	}
-
-	/**
-	 * Render the Chart.js visibility score trendline.
-	 *
-	 * @param array<int, array{run_id: string, captured_at: string, score: float}> $trendline Trendline data points.
+	 * @param array<int, array{run_id: string, captured_at: string, score: float}> $trendline       Trendline data.
+	 * @param array<string, array{label: string, cited: bool}>                     $standings        Standings map.
+	 * @param string                                                                $last_run_at      Formatted timestamp.
+	 * @param float                                                                 $mtd_cost         Month-to-date spend USD.
+	 * @param float                                                                 $cap              Monthly cap USD.
+	 * @param array<string, array{health_status: string}>                          $last_run_counts  Per-model health.
 	 *
 	 * @return void
 	 */
-	private function render_trendline( array $trendline ): void {
-		echo '<div class="prv-card"><h2>' . esc_html__( 'Visibility Score — Trend', 'pr-vision' ) . '</h2>';
+	private function render_bento_band(
+		array $trendline,
+		array $standings,
+		string $last_run_at,
+		float $mtd_cost,
+		float $cap,
+		array $last_run_counts
+	): void {
+		$current_score = empty( $trendline ) ? 0.0 : (float) end( $trendline )['score'];
+		$prev_score    = count( $trendline ) >= 2 ? (float) $trendline[ count( $trendline ) - 2 ]['score'] : null;
+		$cited_count   = 0;
+		$total_count   = count( $standings );
 
-		if ( empty( $trendline ) ) {
-			echo '<p>' . esc_html__( 'No probe runs recorded yet. Click "Run now" to collect the first data point.', 'pr-vision' ) . '</p></div>';
-			return;
+		foreach ( $standings as $row ) {
+			if ( ! empty( $row['cited'] ) ) {
+				$cited_count++;
+			}
 		}
 
-		$labels = array();
-		$scores = array();
-		foreach ( $trendline as $point ) {
-			$labels[] = esc_js( gmdate( 'M j', (int) strtotime( $point['captured_at'] ) ) );
-			$scores[] = (float) $point['score'];
-		}
+		$health    = $this->derive_health_pill_state( $last_run_counts );
+		$pct       = $cap > 0 ? min( 100.0, round( $mtd_cost / $cap * 100, 1 ) ) : 0;
+		$truncated = (bool) get_option( 'prv_last_run_truncated', false );
 
-		$labels_json = wp_json_encode( $labels );
-		$scores_json = wp_json_encode( $scores );
-
-		echo '<canvas id="prv-trendline-chart" height="120"></canvas>';
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<script>document.addEventListener("DOMContentLoaded",function(){';
-		echo 'var ctx=document.getElementById("prv-trendline-chart").getContext("2d");';
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo 'new Chart(ctx,{type:"line",data:{labels:' . $labels_json . ',datasets:[{label:"Visibility Score",data:' . $scores_json . ',borderColor:"#2271b1",tension:0.3,fill:false}]},options:{scales:{y:{min:0,max:1,title:{display:true,text:"Score"}}},plugins:{legend:{display:false}}}});';
-		echo '});</script>';
-		echo '</div>';
+		$this->renderer->render_bento(
+			$current_score,
+			$prev_score,
+			$cited_count,
+			$total_count,
+			$health,
+			$mtd_cost,
+			$cap,
+			$pct,
+			$truncated,
+			$last_run_at,
+			$total_count
+		);
 	}
 
 	/**
@@ -127,15 +150,14 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 	 * @return void
 	 */
 	private function render_standings( array $standings ): void {
-		echo '<div class="prv-card"><h2>' . esc_html__( 'Current Standings', 'pr-vision' ) . '</h2>';
+		echo '<div class="prv-card"><div class="prv-card-head"><h2>' . esc_html__( 'Current Standings', 'pr-vision' ) . '</h2></div><div class="prv-card-body">';
 
 		if ( empty( $standings ) ) {
-			echo '<p>' . esc_html__( 'No standings data yet.', 'pr-vision' ) . '</p></div>';
+			echo '<p>' . esc_html__( 'No standings data yet.', 'pr-vision' ) . '</p></div></div>';
 			return;
 		}
 
-		echo '<table class="wp-list-table widefat fixed striped prv-standings">';
-		echo '<thead><tr>';
+		echo '<table class="wp-list-table widefat fixed striped prv-standings"><thead><tr>';
 		echo '<th>' . esc_html__( 'Peptide', 'pr-vision' ) . '</th>';
 		echo '<th>' . esc_html__( 'Cited?', 'pr-vision' ) . '</th>';
 		echo '<th>' . esc_html__( 'Our Position', 'pr-vision' ) . '</th>';
@@ -143,18 +165,73 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 		echo '</tr></thead><tbody>';
 
 		foreach ( $standings as $row ) {
-			$cited_icon = $row['cited'] ? '&#x2705;' : '&#x274C;';
-			$position   = null !== $row['our_position'] ? '#' . (int) $row['our_position'] : '—';
-			$domains    = implode( ', ', array_map( 'esc_html', (array) $row['top_domains'] ) );
+			$is_cited    = ! empty( $row['cited'] );
+			$cited_dot   = $is_cited ? '&#x25CF;' : '&#x25CB;';
+			$cited_label = $is_cited ? esc_html__( 'Cited', 'pr-vision' ) : esc_html__( 'Not yet', 'pr-vision' );
+			$cited_class = $is_cited ? 'prv-status prv-status--cited' : 'prv-status prv-status--not-yet';
+			$position    = null !== $row['our_position'] ? '#' . (int) $row['our_position'] : '—';
+			$domains     = implode( ', ', array_map( 'esc_html', (array) $row['top_domains'] ) );
 
 			echo '<tr>';
 			echo '<td>' . esc_html( (string) $row['label'] ) . '</td>';
-			echo '<td>' . $cited_icon . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- only emoji
+			echo '<td><span class="' . esc_attr( $cited_class ) . '">' . $cited_dot . ' ' . $cited_label . '</span></td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — dot is HTML entity; label escaped above; class esc_attr'd
 			echo '<td>' . esc_html( $position ) . '</td>';
 			echo '<td>' . wp_kses_post( $domains ) . '</td>';
 			echo '</tr>';
 		}
 
-		echo '</tbody></table></div>';
+		echo '</tbody></table></div></div>';
+	}
+
+	/**
+	 * Derive the run-health pill state and label from per-model health data.
+	 *
+	 * States: 'ok' (all healthy/disabled), 'warn' (any retired), 'neutral' (no data yet).
+	 *
+	 * @param array<string, array{health_status: string}> $last_run_counts Per-model health map.
+	 *
+	 * @return array{state: string, label: string}
+	 */
+	private function derive_health_pill_state( array $last_run_counts ): array {
+		if ( empty( $last_run_counts ) ) {
+			return array(
+				'state' => 'neutral',
+				'label' => __( 'No run yet', 'pr-vision' ),
+			);
+		}
+
+		$retired_count = 0;
+		$healthy_count = 0;
+		foreach ( $last_run_counts as $model ) {
+			$status = (string) ( $model['health_status'] ?? 'unknown' );
+			if ( 'retired' === $status ) {
+				$retired_count++;
+			} elseif ( 'healthy' === $status ) {
+				$healthy_count++;
+			}
+		}
+
+		if ( $retired_count > 0 ) {
+			return array(
+				'state' => 'warn',
+				'label' => sprintf(
+					/* translators: %d: number of degraded models */
+					_n( '%d model degraded', '%d models degraded', $retired_count, 'pr-vision' ),
+					$retired_count
+				),
+			);
+		}
+
+		if ( 0 === $healthy_count ) {
+			return array(
+				'state' => 'neutral',
+				'label' => __( 'No run yet', 'pr-vision' ),
+			);
+		}
+
+		return array(
+			'state' => 'ok',
+			'label' => __( 'All models healthy', 'pr-vision' ),
+		);
 	}
 }
