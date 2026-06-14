@@ -157,7 +157,15 @@ class PRV_Settings_Page {
 			PRV_Cron::reschedule( $cadence );
 		}
 
-		wp_safe_redirect( add_query_arg( array( 'page' => self::MENU_SLUG, 'prv_saved' => 1 ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'      => self::MENU_SLUG,
+					'prv_saved' => 1,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
@@ -180,7 +188,15 @@ class PRV_Settings_Page {
 			PRV_Model_Registry::add( $slug, $provider, $enabled, $note );
 			PRV_Config_Version::bump_version_if_changed();
 		}
-		wp_safe_redirect( add_query_arg( array( 'page' => self::MENU_SLUG, 'prv_model_added' => 1 ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'            => self::MENU_SLUG,
+					'prv_model_added' => 1,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
@@ -200,10 +216,25 @@ class PRV_Settings_Page {
 		$note    = sanitize_text_field( wp_unslash( (string) ( $_POST['prv_model_note'] ?? '' ) ) );
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		if ( '' !== $id && '' !== $slug ) {
-			PRV_Model_Registry::update( $id, array( 'slug' => $slug, 'enabled' => $enabled, 'note' => $note ) );
+			PRV_Model_Registry::update(
+				$id,
+				array(
+					'slug'    => $slug,
+					'enabled' => $enabled,
+					'note'    => $note,
+				)
+			);
 			PRV_Config_Version::bump_version_if_changed();
 		}
-		wp_safe_redirect( add_query_arg( array( 'page' => self::MENU_SLUG, 'prv_model_updated' => 1 ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'              => self::MENU_SLUG,
+					'prv_model_updated' => 1,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
@@ -223,7 +254,15 @@ class PRV_Settings_Page {
 			PRV_Model_Registry::remove( $id );
 			PRV_Config_Version::bump_version_if_changed();
 		}
-		wp_safe_redirect( add_query_arg( array( 'page' => self::MENU_SLUG, 'prv_model_removed' => 1 ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'              => self::MENU_SLUG,
+					'prv_model_removed' => 1,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
 		exit;
 	}
 
@@ -239,7 +278,15 @@ class PRV_Settings_Page {
 	public function handle_run_now(): void {
 		$this->require_admin_nonce( self::NONCE_RUN );
 		if ( PRV_Run_Lock::is_locked() ) {
-			wp_safe_redirect( add_query_arg( array( 'page' => self::MENU_SLUG, 'prv_run_locked' => 1 ), admin_url( 'admin.php' ) ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'           => self::MENU_SLUG,
+						'prv_run_locked' => 1,
+					),
+					admin_url( 'admin.php' )
+				)
+			);
 			exit;
 		}
 		$runner = new PRV_Probe_Runner();

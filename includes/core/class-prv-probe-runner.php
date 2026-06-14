@@ -236,7 +236,7 @@ class PRV_Probe_Runner {
 	/**
 	 * Derive + persist the API-key status from run outcomes.
 	 *
-	 * @param array<string, mixed>                         $counts         Run counts.
+	 * @param array<string, mixed>                           $counts         Run counts.
 	 * @param array<string, array{probed: int, errors: int}> $model_outcomes Model outcomes.
 	 *
 	 * @return void

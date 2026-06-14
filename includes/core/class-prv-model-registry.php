@@ -196,8 +196,8 @@ class PRV_Model_Registry {
 	 *
 	 * Side effects: Updates prv_models option.
 	 *
-	 * @param string                                           $run_id   UUID of completed run.
-	 * @param array<string, array{probed: int, errors: int}>  $outcomes Per-slug outcome.
+	 * @param string                                         $run_id   UUID of completed run.
+	 * @param array<string, array{probed: int, errors: int}> $outcomes Per-slug outcome.
 	 *
 	 * @return void
 	 */
