@@ -39,7 +39,8 @@ pr-vision/
 │   │   ├── class-prv-probe-runner.php        # Orchestrates run: lock + peptide*intent*model loop
 │   │   ├── class-prv-collector-registry.php  # Singleton registry for collectors + panels
 │   │   ├── class-prv-admin-page.php          # Dashboard page: menu, Run now, rendering
-│   │   ├── class-prv-settings-page.php       # [v0.2] Settings page: POST handlers + AJAX dispatch
+│   │   ├── class-prv-settings-page.php       # [v0.2] Settings page: menu, Run-now, AJAX dispatch; delegates POST to PRV_Settings_Controller
+│   │   ├── class-prv-settings-controller.php # [v0.2] POST handler impl: save config, model CRUD (split from settings-page)
 │   │   ├── class-prv-settings-renderer.php   # [v0.2] Settings HTML renderer (dark Assay theme)
 │   │   ├── class-prv-model-manager-table.php # [v0.2] Model manager table + Add form renderer
 │   │   └── class-prv-model-test-ajax.php     # [v0.2] Rate-limited AJAX handler for Test button
