@@ -203,14 +203,28 @@ class PRV_Admin_Page {
 	/**
 	 * Return the dashboard CSS for the PR Vision admin page.
 	 *
-	 * Uses CSS custom properties matching the "Assay" dark design palette from
-	 * design/pr-vision/design-proposal.md. Scoped to .prv-* selectors so it
-	 * cannot leak into WP admin chrome.
+	 * Covers two concerns:
+	 * 1. WP admin wrapper chrome (injected here; fires on BOTH PR Vision screens
+	 *    because the enqueue_assets guard matches 'pr-vision' in the hook suffix):
+	 *    #wpcontent / #wpbody-content are set to the dark page bg so no white
+	 *    gutter/strip shows around or above the dark UI.
+	 * 2. Component tokens (.prv-*) — unchanged from prior versions.
+	 *
+	 * This inline style block is attached to wp-admin (always loaded on admin
+	 * pages) via wp_add_inline_style() and therefore only present on the two
+	 * PR Vision screens. It must NOT be registered globally.
 	 *
 	 * @return string CSS string.
 	 */
 	private function get_dashboard_css(): string {
 		return '
+/* === PR Vision — WP admin chrome: kill white wrappers (scoped via conditional enqueue) === */
+#wpcontent{background:#14181C;padding-left:0;}
+#wpbody-content{background:#14181C;min-height:calc(100vh - 32px);padding-bottom:40px;}
+#wpbody{background:#14181C;}
+.wrap>h1,.prv-settings-wrap~*>h1,.wp-heading-inline{color:#EEF2F5;}
+.notice.prv-proxy-note{background:#1C2228;border-left-color:#34C0CA;color:#EEF2F5;}
+.notice.prv-proxy-note p{color:#C2CCD6;}
 /* === PR Vision dashboard — "Assay" palette (dark-adapted) === */
 .prv-bento{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;margin:18px 0 22px;}
 @media(max-width:820px){.prv-bento{grid-template-columns:1fr;}}

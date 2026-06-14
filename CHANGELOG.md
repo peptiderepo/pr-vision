@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [0.2.2] — 2026-06-14
+
+Kill white WP admin gutters around the dark "Assay" UI — CSS only, no logic change.
+
+### Fixed
+
+- **Admin chrome (dashboard + settings):** `#wpcontent`, `#wpbody`, and `#wpbody-content` now receive the dark page background (`#14181C`) on both PR Vision screens. WP's default `20px` left padding on `#wpcontent` is removed so no light gutter appears between the left menu and the dark content area.
+- **WP admin bar / first-element gap:** `#wpbody` dark fill removes the white strip between the admin bar and the first card.
+- **Page `<h1>` header:** `.wrap > h1` colour set to the light text token (`#EEF2F5`) so the dashboard heading renders on dark, not white.
+- **Proxy-note banner (dashboard):** `.notice.prv-proxy-note` overridden to dark surface (`#1C2228`) with teal left border — banner now sits on dark bg matching the surrounding cards.
+- **Scope:** entire CSS block delivered via `wp_add_inline_style('wp-admin', …)` inside `PRV_Admin_Page::enqueue_assets()`, which is already guarded by `strpos($hook, 'pr-vision')`. Styles are absent on every other WP admin page. WP admin bar and left menu are not touched.
+
+---
+
 ## [0.1.1] — 2026-06-13
 
 Rename to PR Vision; fix www-strip in competitor display; PHPCS gating; remove dead cache.
