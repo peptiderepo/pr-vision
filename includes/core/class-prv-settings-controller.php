@@ -33,7 +33,11 @@ class PRV_Settings_Controller {
 	/** Admin menu slug (shared constant with PRV_Settings_Page). */
 	const MENU_SLUG = 'pr-vision-settings';
 
-	/** @var callable(): void  Nonce-verification callback supplied by PRV_Settings_Page. */
+	/**
+	 * Nonce-verification callback supplied by PRV_Settings_Page.
+	 *
+	 * @var callable(): void
+	 */
 	private $nonce_cb;
 
 	/**
