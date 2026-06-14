@@ -16,6 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
 
+// WordPress DB result-format constants.
+if ( ! defined( 'ARRAY_A' ) ) {
+	define( 'ARRAY_A', 'ARRAY_A' );
+}
+if ( ! defined( 'OBJECT' ) ) {
+	define( 'OBJECT', 'OBJECT' );
+}
+if ( ! defined( 'ARRAY_N' ) ) {
+	define( 'ARRAY_N', 'ARRAY_N' );
+}
+
 define( 'PRV_VERSION', '0.2.1' );
 define( 'PRV_PLUGIN_FILE', __DIR__ . '/../pr-vision.php' );
 define( 'PRV_PLUGIN_DIR', realpath( __DIR__ . '/..' ) . '/' );

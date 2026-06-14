@@ -28,17 +28,17 @@ class PRV_Dashboard_Renderer {
 	/**
 	 * Render the three-tile KPI bento band.
 	 *
-	 * @param float                                                               $current_score   Current visibility score 0–1.
-	 * @param float|null                                                          $prev_score      Previous-run score, null if first run.
-	 * @param int                                                                 $cited_count     Number of cited peptides.
-	 * @param int                                                                 $total_count     Total peptides tracked.
-	 * @param array{state: string, label: string}                                $health          Run-health pill state + label.
-	 * @param float                                                               $mtd_cost        Month-to-date spend USD.
-	 * @param float                                                               $cap             Monthly budget cap USD.
-	 * @param float                                                               $pct             Percentage of cap consumed.
-	 * @param bool                                                                $truncated       Whether the last run hit the cap.
-	 * @param string                                                              $last_run_at     Formatted run timestamp or "Never".
-	 * @param int                                                                 $row_count       Total peptide row count.
+	 * @param float      $current_score Current visibility score 0–1.
+	 * @param float|null $prev_score    Previous-run score, null if first run.
+	 * @param int        $cited_count   Number of cited peptides.
+	 * @param int        $total_count   Total peptides tracked.
+	 * @param array      $health        Run-health pill state + label ({state, label}).
+	 * @param float      $mtd_cost      Month-to-date spend USD.
+	 * @param float      $cap           Monthly budget cap USD.
+	 * @param float      $pct           Percentage of cap consumed.
+	 * @param bool       $truncated     Whether the last run hit the cap.
+	 * @param string     $last_run_at   Formatted run timestamp or "Never".
+	 * @param int        $row_count     Total peptide row count.
 	 *
 	 * @return void
 	 */
@@ -189,11 +189,11 @@ class PRV_Dashboard_Renderer {
 	/**
 	 * Render the visibility score KPI tile with run-health pill.
 	 *
-	 * @param float                              $score      Current visibility score 0–1.
-	 * @param float|null                         $prev_score Previous run score, null if first run.
-	 * @param int                                $cited      Number of cited peptides.
-	 * @param int                                $total      Total peptides tracked.
-	 * @param array{state: string, label: string} $health    Run-health pill state.
+	 * @param float      $score      Current visibility score 0–1.
+	 * @param float|null $prev_score Previous run score, null if first run.
+	 * @param int        $cited      Number of cited peptides.
+	 * @param int        $total      Total peptides tracked.
+	 * @param array      $health     Run-health pill state ({state, label}).
 	 *
 	 * @return void
 	 */
@@ -208,7 +208,8 @@ class PRV_Dashboard_Renderer {
 		echo '</span>';
 		echo '<div class="prv-tile-label">' . esc_html__( 'Visibility Score', 'pr-vision' ) . '</div>';
 		echo '<div class="prv-tile-big">' . esc_html( (string) $score_pct ) . '<small>%</small></div>';
-		echo $delta_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — built by build_delta_html; values escaped inside
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built by build_delta_html; esc_html() applied on all user values inside
+		echo $delta_html;
 		echo '<div class="prv-tile-sub">' . esc_html(
 			sprintf(
 				/* translators: 1: cited count, 2: total peptide count */
