@@ -68,6 +68,7 @@ class PRV_Call_Meta_Table {
 			http_status    INT(11)             NOT NULL DEFAULT 200,
 			captured_at    DATETIME            NOT NULL,
 			config_version INT(11)             NULL     DEFAULT NULL,
+			io_captured    TINYINT(1)          NOT NULL DEFAULT 0,
 			PRIMARY KEY (id),
 			KEY visibility_row (visibility_row),
 			KEY run_id (run_id),

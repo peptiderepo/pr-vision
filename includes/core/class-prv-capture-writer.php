@@ -15,7 +15,7 @@ declare(strict_types=1);
  *   - NEVER receives $headers, $parsed_args, Authorization, or api keys.
  *   - Allowlist: prompt_text, response_text, model, peptide_slug, intent_label,
  *     tokens_in, tokens_out, cost_usd, latency_ms, cited, http_status,
- *     config_version, visibility_row, run_id, captured_at.
+ *     config_version, visibility_row, run_id, captured_at, io_captured.
  *
  * Capture is BEST-EFFORT: capture_io() is wrapped in a swallowing try/catch
  * by the caller (PRV_Probe_Runner). A write failure must never reach the probe
@@ -38,6 +38,7 @@ class PRV_Capture_Writer {
 	 *
 	 * Called inside the probe loop BEFORE capture_io() so the metadata row
 	 * exists even when the I/O write fails. Returns the inserted row ID.
+	 * io_captured is always 0 here; call set_io_captured() after write_io() succeeds.
 	 *
 	 * Side effects: Database write to prv_call_meta.
 	 *
@@ -72,8 +73,9 @@ class PRV_Capture_Writer {
 				'http_status'    => (int) ( $meta['http_status'] ?? 200 ),
 				'captured_at'    => $now,
 				'config_version' => isset( $meta['config_version'] ) ? (int) $meta['config_version'] : null,
+				'io_captured'    => 0,
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d' )
+			array( '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d', '%d' )
 		);
 
 		return (int) $wpdb->insert_id;
@@ -85,7 +87,11 @@ class PRV_Capture_Writer {
 	 * Security: only prompt_text and response_text are stored — never
 	 * headers, Authorization, or any raw HTTP request object.
 	 *
-	 * Side effects: Database write to prv_call_io.
+	 * On success, sets io_captured = 1 on the matching prv_call_meta row.
+	 * The meta update is a best-effort follow-up; a failure here is not
+	 * propagated (caller already swallows this entire method).
+	 *
+	 * Side effects: Database writes to prv_call_io and prv_call_meta.
 	 *
 	 * @param int    $call_id       FK to prv_call_meta.id.
 	 * @param string $prompt_text   Rendered plain-text prompt (messages joined).
@@ -111,7 +117,12 @@ class PRV_Capture_Writer {
 			array( '%d', '%s', '%s', '%s' )
 		);
 
-		return false !== $result;
+		if ( false !== $result ) {
+			$this->set_io_captured( $call_id );
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -142,5 +153,32 @@ class PRV_Capture_Writer {
 		);
 
 		return false !== $result;
+	}
+
+	/**
+	 * Mark io_captured = 1 on the prv_call_meta row after a successful I/O write.
+	 *
+	 * Best-effort: called internally from write_io(); failure is non-fatal.
+	 * Legacy/pre-feature rows retain io_captured = 0 (the column default).
+	 *
+	 * Side effects: Database write to prv_call_meta.
+	 *
+	 * @param int $call_id PK of the prv_call_meta row.
+	 *
+	 * @return void
+	 */
+	private function set_io_captured( int $call_id ): void {
+		global $wpdb;
+
+		$table = PRV_Call_Meta_Table::get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			$table,
+			array( 'io_captured' => 1 ),
+			array( 'id' => $call_id ),
+			array( '%d' ),
+			array( '%d' )
+		);
 	}
 }

@@ -83,7 +83,7 @@ class PRV_Costs_Renderer {
 			echo esc_html(
 				sprintf(
 					/* translators: 1: cost, 2: call count */
-					__( '$%1$s recorded across %2$d calls this month — matches the Dashboard MTD total.', 'pr-vision' ),
+					__( '$%1$s recorded across %2$d calls this month — approximately reconciles to the Dashboard MTD total.', 'pr-vision' ),
 					number_format( $mtd_cost, 4 ),
 					$total_calls
 				)

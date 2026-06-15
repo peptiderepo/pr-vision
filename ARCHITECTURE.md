@@ -151,6 +151,7 @@ Admin page load ─────────────────────�
 | http_status | INT | HTTP status (200=ok, 4xx/5xx=error) |
 | captured_at | DATETIME | UTC |
 | config_version | INT NULL | Config version at run time |
+| io_captured | TINYINT(1) | 1 when write_io() succeeded; 0 for error rows and legacy/pre-feature rows; drives drawer state (0=Legacy, 1+io present=Normal, 1+io absent=Pruned) |
 
 **Table:** `{prefix}prv_call_io` (pruned after retention window)
 

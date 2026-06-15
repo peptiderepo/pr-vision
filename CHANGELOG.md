@@ -15,6 +15,9 @@ rendered prompt + raw response. Two new admin pages (Costs, Call Log) with
 a non-modal detail drawer. Raw I/O is pruned on a configurable retention
 window (default 90 days); cost/metadata kept indefinitely.
 
+### Fixed (pre-launch P2 cleanup)
+- `io_captured TINYINT(1) NOT NULL DEFAULT 0` column added to `prv_call_meta` CREATE (baked into initial schema — table is new in v0.3.0). Set to `1` by `PRV_Capture_Writer::write_io()` on success, remains `0` for error rows and legacy/pre-feature rows. Drawer state now driven by `io_captured` instead of the `config_version < 3` heuristic: `0` = Legacy/not-captured; `1` + io row present = Normal; `1` + io row absent = Pruned (aged out). Removes a fragile inference.
+
 ### Security (P0)
 - `PRV_Gateway_Client::post_to_gateway()` — removed response body from
   RuntimeException message; exception now carries HTTP status code only.

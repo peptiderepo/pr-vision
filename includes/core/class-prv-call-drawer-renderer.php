@@ -86,21 +86,21 @@ class PRV_Call_Drawer_Renderer {
 		$latency_ms = isset( $meta['latency_ms'] ) ? (int) $meta['latency_ms'] : null;
 		$cost_usd   = (float) ( $meta['cost_usd'] ?? 0.0 );
 		$run_id     = (string) ( $meta['run_id'] ?? '' );
-		$config_ver = isset( $meta['config_version'] ) ? (int) $meta['config_version'] : null;
+		$config_ver  = isset( $meta['config_version'] ) ? (int) $meta['config_version'] : null;
+		$io_captured = isset( $meta['io_captured'] ) ? (int) $meta['io_captured'] : 0;
 
-		// Determine drawer state.
-		$is_legacy   = ( null === $io && ! $is_error );
-		$is_pruned   = false; // Detection: io null + not legacy = checked by caller.
+		// Determine drawer state using the explicit io_captured flag.
+		// io_captured = 1 AND io row present  → Normal.
+		// io_captured = 1 AND io row absent   → Pruned (aged out by retention cron).
+		// io_captured = 0                     → Legacy / not captured (pre-feature row).
 		$has_io      = ( null !== $io );
 		$vis_row_null = empty( $meta['visibility_row'] );
-		if ( null === $io && ! $is_error ) {
-			// Could be pruned or legacy (pre-v0.3). Distinguish by config_version.
-			if ( null === $config_ver || $config_ver < 3 ) {
-				$is_legacy = true;
-			} else {
-				$is_pruned = true;
-				$is_legacy = false;
-			}
+		if ( ! $is_error ) {
+			$is_legacy = ( 0 === $io_captured );
+			$is_pruned = ( 1 === $io_captured && ! $has_io );
+		} else {
+			$is_legacy = false;
+			$is_pruned = false;
 		}
 
 		// Header.
