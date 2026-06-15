@@ -11,21 +11,21 @@ declare(strict_types=1);
  * PR Vision Settings admin page.
  *
  * Registers "PR Vision > Settings" sub-menu, dispatches POST actions to
- * PRV_Settings_Controller, handles Run-now and AJAX test-model, and
- * delegates all HTML rendering to PRV_Settings_Renderer.
+ * PRV_Settings_Controller, handles Run-now and AJAX test-model/test-key,
+ * and delegates all HTML rendering to PRV_Settings_Renderer.
  *
  * All actions require: current_user_can('manage_options') + valid nonce.
  *
  * Who triggers: PRV_Plugin::init() -- is_admin() guard.
  * Dependencies: PRV_Settings_Controller, PRV_Settings_Renderer,
- *               PRV_Model_Test_Ajax, PRV_Probe_Runner, PRV_Run_Lock.
+ *               PRV_Model_Test_Ajax, PRV_Key_Test_Ajax, PRV_Probe_Runner,
+ *               PRV_Run_Lock.
  *
  * @see class-prv-settings-controller.php -- POST handler implementations.
  * @see class-prv-settings-renderer.php   -- Renders the HTML.
- * @see class-prv-model-test-ajax.php     -- AJAX test handler.
- * @see class-prv-model-registry.php      -- CRUD for prv_models.
- * @see class-prv-config-version.php      -- Config-change versioning.
- * @see class-prv-cron.php                -- Reschedule on cadence change.
+ * @see class-prv-model-test-ajax.php     -- AJAX test-model handler.
+ * @see class-prv-key-test-ajax.php       -- AJAX test-key handler.
+ * @see class-prv-key-store.php           -- Key storage actions.
  * @package PrVision
  */
 class PRV_Settings_Page {
@@ -45,10 +45,16 @@ class PRV_Settings_Page {
 	/** Nonce action for Test model AJAX. */
 	const NONCE_TEST = 'prv_model_test';
 
+	/** Nonce action for key set/remove POST actions. */
+	const NONCE_KEY = 'prv_key_action';
+
+	/** Nonce action for Test key AJAX. */
+	const NONCE_KEY_TEST = 'prv_key_test';
+
 	/**
 	 * Register WordPress admin hooks.
 	 *
-	 * POST handlers for save/model-CRUD are delegated to PRV_Settings_Controller,
+	 * POST handlers for save/model-CRUD/key are delegated to PRV_Settings_Controller,
 	 * which receives a nonce-verification callback bound to this page.
 	 *
 	 * Side effects: Adds admin_menu, admin_post, and wp_ajax actions.
@@ -67,8 +73,11 @@ class PRV_Settings_Page {
 		add_action( 'admin_post_prv_model_add', array( $ctrl, 'handle_model_add' ) );
 		add_action( 'admin_post_prv_model_update', array( $ctrl, 'handle_model_update' ) );
 		add_action( 'admin_post_prv_model_remove', array( $ctrl, 'handle_model_remove' ) );
+		add_action( 'admin_post_prv_key_set', array( $ctrl, 'handle_key_set' ) );
+		add_action( 'admin_post_prv_key_remove', array( $ctrl, 'handle_key_remove' ) );
 		add_action( 'admin_post_prv_settings_run_now', array( $this, 'handle_run_now' ) );
 		add_action( 'wp_ajax_prv_test_model', array( $this, 'handle_test_model' ) );
+		add_action( 'wp_ajax_prv_test_key', array( $this, 'handle_test_key' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
@@ -158,6 +167,17 @@ class PRV_Settings_Page {
 	}
 
 	/**
+	 * Dispatch the AJAX test-key request to PRV_Key_Test_Ajax.
+	 *
+	 * Side effects: Exits via PRV_Key_Test_Ajax::handle().
+	 *
+	 * @return void
+	 */
+	public function handle_test_key(): void {
+		( new PRV_Key_Test_Ajax() )->handle();
+	}
+
+	/**
 	 * Render the settings page.
 	 *
 	 * Side effects: Outputs HTML via PRV_Settings_Renderer.
@@ -175,7 +195,7 @@ class PRV_Settings_Page {
 	 * Verify admin capability and nonce; wp_die on failure.
 	 *
 	 * Called directly for Run-now, and passed as a callback to
-	 * PRV_Settings_Controller for the four POST handlers.
+	 * PRV_Settings_Controller for all POST handlers.
 	 *
 	 * @param string $action Nonce action.
 	 *

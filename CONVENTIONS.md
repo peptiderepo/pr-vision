@@ -82,3 +82,13 @@ Every public method must have:
 2. Implement `PRV_Dashboard_Panel` in `includes/panel/`.
 3. Register both in `PRV_Plugin::init()` via `PRV_Collector_Registry::instance()`.
 4. Update `ARCHITECTURE.md` §6 (Collector/Panel seam).
+
+## 9. API key access (v0.2.3)
+
+**Never read `PRV_OPENROUTER_API_KEY` directly in provider or handler code.**
+All key reads must go through `PRV_Key_Store::get_key()`. This maintains the precedence chain (constant → encrypted option → none) and ensures a key set via the admin UI is used without code changes.
+
+- Providers: call `PRV_Key_Store::get_key()` in `probe()`.
+- AJAX handlers: call `PRV_Key_Store::get_key()` before any LLM call.
+- New provider that needs the key: implement `is_configured()` as `'' !== PRV_Key_Store::get_key()`.
+- Do NOT pass the resolved key to any client-side surface, log, exception message, or `error_log()`.

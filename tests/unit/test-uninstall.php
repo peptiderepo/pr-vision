@@ -36,6 +36,7 @@ update_option( 'prv_last_run_at', '2026-06-14 12:00:00' );
 update_option( 'prv_last_run_counts', [] );
 update_option( 'prv_last_run_truncated', 0 );
 update_option( 'prv_last_run_truncated_at', '' );
+update_option( 'prv_provider_key_enc', 'dummy-encrypted-ciphertext-value' );
 update_option( 'prv_schema_version', PRV_SCHEMA_VERSION );
 $GLOBALS['prv_test_state']['transients'][ PRV_Run_Lock::LOCK_KEY ] = time();
 $GLOBALS['prv_test_state']['cron_events'][ PRV_CRON_HOOK ] = [ 'timestamp' => time() + 3600, 'schedule' => 'weekly' ];
@@ -72,6 +73,7 @@ prv_assert( false === get_option( 'prv_active_config_version' ), 'post-uninstall
 prv_assert( false === get_option( 'prv_config_versions' ),      'post-uninstall: prv_config_versions deleted' );
 prv_assert( false === get_option( 'prv_models_schema_version' ), 'post-uninstall: prv_models_schema_version deleted' );
 prv_assert( false === get_option( 'prv_schema_version' ),       'post-uninstall: prv_schema_version deleted' );
+prv_assert( false === get_option( 'prv_provider_key_enc' ),       'post-uninstall: prv_provider_key_enc (v0.2.3 encrypted key) deleted' );
 prv_assert( false === get_option( 'prv_last_run_truncated' ),   'post-uninstall: prv_last_run_truncated deleted' );
 prv_assert( false === get_transient( PRV_Run_Lock::LOCK_KEY ),  'post-uninstall: run lock transient cleared' );
 prv_assert( false === PRV_Cron::is_scheduled(),                 'post-uninstall: cron cleared' );

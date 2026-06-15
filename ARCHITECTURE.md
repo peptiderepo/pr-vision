@@ -43,7 +43,11 @@ pr-vision/
 │   │   ├── class-prv-settings-controller.php # [v0.2] POST handler impl: save config, model CRUD (split from settings-page)
 │   │   ├── class-prv-settings-renderer.php   # [v0.2] Settings HTML renderer (dark Assay theme)
 │   │   ├── class-prv-model-manager-table.php # [v0.2] Model manager table + Add form renderer
-│   │   └── class-prv-model-test-ajax.php     # [v0.2] Rate-limited AJAX handler for Test button
+│   │   ├── class-prv-model-test-ajax.php     # [v0.2] Rate-limited AJAX handler for Test button
+│   │   ├── class-prv-key-store.php           # [v0.2.3] API key resolver: constant → enc-option → none
+│   │   ├── class-prv-crypto-helper.php       # [v0.2.3] libsodium/OpenSSL encrypt+decrypt
+│   │   ├── class-prv-key-manager-renderer.php # [v0.2.3] Write-only key card renderer
+│   │   └── class-prv-key-test-ajax.php       # [v0.2.3] AJAX handler for Test key button
 │   ├── providers/
 │   │   ├── interface-prv-probe-provider.php  # probe(query): PRV_Probe_Result contract
 │   │   ├── class-prv-gateway-client.php      # Cloudflare AI Gateway HTTP + retry
@@ -155,7 +159,8 @@ Schema version: `prv_schema_version` = 2.
 | prv_config_versions | array | All config-version records |
 | prv_active_config_version | int | Currently active version number |
 | prv_cadence | string | 'weekly'\|'daily'\|'twicedaily' |
-| prv_api_key_status | string | 'ok'\|'failed'\|'unknown' |
+| prv_api_key_status | string | 'ok'|'failed'|'unknown' |
+| prv_provider_key_enc | string | [v0.2.3] Encrypted API key ciphertext (hex(nonce):hex(ciphertext)); PRV_Key_Store |
 | prv_api_key_last_check | string | Datetime of last status update |
 | prv_last_run_at | string | Datetime of last run |
 | prv_last_run_counts | array | {probed, skipped_budget, skipped_error, truncated, run_id} |
@@ -193,12 +198,22 @@ Same as v0.1.0 -- see CONTEXT.md for the extension guide.
 
 ## 7. Security
 
-- Secrets read from `wp-config.php` constants at runtime -- never stored in DB.
-- API key status shown in 3 states; key never displayed.
+- **API key resolver (v0.2.3):** `PRV_Key_Store::get_key()` is the single access point for
+  the API key. Precedence: `PRV_OPENROUTER_API_KEY` constant → encrypted option `prv_provider_key_enc` → none.
+  All probe + test paths route through this resolver; direct constant reads are removed.
+- **Encrypted at rest (v0.2.3):** admin-entered key stored as ciphertext via `PRV_Crypto_Helper`
+  (libsodium preferred, OpenSSL AES-256-GCM fallback). Encryption key derived from WP salts via SHA-256.
+  Plaintext never stored in any option, transient, log, or error message.
+- **Write-only UI (v0.2.3):** Settings shows source status only; password input always renders empty.
+  Key value never in page source, JS, REST responses, or AJAX responses.
+- **wp-config precedence:** constant takes priority; admin option is only used when constant is absent.
+  Input is disabled with a note when constant is defined.
+- Secrets read from `wp-config.php` constants at runtime (pre-v0.2.3 primary path).
 - All admin actions: `manage_options` check + nonce verification.
 - All DB values escaped with `$wpdb->prepare()`.
 - All HTML output escaped at render.
 - AJAX `prv_test_model`: capability + nonce + 30s rate-limit transient.
+- AJAX `prv_test_key`: capability + nonce + 30s rate-limit transient; key never in response.
 
 ---
 
@@ -212,3 +227,7 @@ Same as v0.1.0 -- see CONTEXT.md for the extension guide.
 | Projected cost from probe_count × fixed estimate | Conservative overestimate; avoids the need for per-model price config in v1; operator sees a safe upper bound. |
 | Three-state API key (not two) | A defined-but-revoked key showed false-green in v1 (QA finding M4). The third state "defined, last run failed" closes that gap without ever displaying the key. |
 | Sticky save-bar warning (not just card banner) | Card banner scrolls off; save-bar is always in viewport on a page with a tall model table (QA finding M2). |
+| wp-config constant beats admin option | Most-secure path (constant) stays the default and is untouched by the admin UI. Admin option is a convenience fallback, never a replacement. |
+| libsodium preferred, OpenSSL fallback | Sodium is bundled in PHP 7.2+ (available on all supported hosts); OpenSSL AES-256-GCM is the universal fallback. Algorithm inferred from nonce length at decrypt time, no stored metadata needed. |
+| Key resolver in PRV_Key_Store, not in providers | Single source of truth — any future provider added to the plugin automatically gets the right key without repeating the precedence logic. |
+| PRV_Crypto_Helper split from PRV_Key_Store | Keeps each file under the 300-line AI-readability limit while preserving a deep-module interface: Key_Store owns the WP-layer (options, salts, source detection); Crypto_Helper owns the crypto primitives. |

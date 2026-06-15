@@ -15,16 +15,18 @@ declare(strict_types=1);
  * an explicit `citations` array — the most faithful citation signal
  * available (real web retrieval vs. training-time knowledge).
  *
- * Required WP-config constant:
- *   PRV_OPENROUTER_API_KEY — OpenRouter key (sk-or-…)
+ * API key is resolved through PRV_Key_Store::get_key() (constant → admin
+ * option → none), never read directly from the constant.
  *
  * Who triggers: PRV_Probe_Runner via the PRV_Probe_Provider interface.
- * Dependencies: PRV_Gateway_Client, PRV_Citation_Detector, PRV_Probe_Result.
+ * Dependencies: PRV_Key_Store, PRV_Gateway_Client, PRV_Citation_Detector,
+ *               PRV_Probe_Result.
  *
  * @see interface-prv-probe-provider.php    — Interface this implements.
+ * @see class-prv-key-store.php             — Single key resolver.
  * @see class-prv-gateway-client.php        — Shared HTTP + retry logic.
  * @see class-prv-citation-detector.php     — Domain extraction + detection.
- * @see ARCHITECTURE.md                     — §Provider implementations.
+ * @see ARCHITECTURE.md                     — §Provider implementations, §Key management.
  * @see CONTEXT.md                          — "Perplexity sonar", "citations".
  * @package PrVision
  */
@@ -37,7 +39,6 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 
 	/**
 	 * Estimated cost per probe call in USD (sonar is ~$0.005 / 1k tokens).
-	 * Used by the ledger's can_afford() pre-check. Actual cost settled post-call.
 	 */
 	const ESTIMATED_COST_PER_PROBE = 0.005;
 
@@ -69,16 +70,19 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * Sends the query as a user message to perplexity/sonar via OpenRouter.
-	 * Parses the citations[] array from the OpenRouter response envelope.
+	 * Resolves the key via PRV_Key_Store (constant → option → none).
 	 *
 	 * @param string $query The search query to probe.
 	 *
 	 * @return PRV_Probe_Result
-	 * @throws \RuntimeException On permanent API failure.
+	 * @throws \RuntimeException On permanent API failure or no key configured.
 	 */
 	public function probe( string $query ): PRV_Probe_Result {
-		$api_key = $this->resolve_api_key();
+		$api_key = PRV_Key_Store::get_key();
+		if ( '' === $api_key ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- exception, not HTML
+			throw new \RuntimeException( 'PRV_OPENROUTER_API_KEY is not configured. Set it in wp-config.php or via Settings.' );
+		}
 
 		$body = array(
 			'model'      => self::MODEL,
@@ -126,7 +130,6 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 		// Cost from usage data when available; fall back to estimate.
 		$cost_usd = self::ESTIMATED_COST_PER_PROBE;
 		if ( isset( $data['usage']['total_tokens'] ) ) {
-			// Sonar: ~$1 per 1M input, $1 per 1M output tokens. Avg ~$0.001/1k.
 			$cost_usd = (float) $data['usage']['total_tokens'] * 0.000001;
 		}
 
@@ -142,22 +145,10 @@ class PRV_Perplexity_Provider implements PRV_Probe_Provider {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * True when any source (constant or admin option) provides a non-empty key.
 	 */
 	public function is_configured(): bool {
-		return defined( 'PRV_OPENROUTER_API_KEY' ) && '' !== PRV_OPENROUTER_API_KEY;
-	}
-
-	/**
-	 * Retrieve the OpenRouter API key from wp-config constants.
-	 *
-	 * @return string The API key.
-	 * @throws \RuntimeException When the constant is not defined or empty.
-	 */
-	private function resolve_api_key(): string {
-		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) || '' === PRV_OPENROUTER_API_KEY ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- exception message, not HTML output
-			throw new \RuntimeException( __( 'PRV_OPENROUTER_API_KEY constant is not defined. Add it to wp-config.php.', 'pr-vision' ) );
-		}
-		return PRV_OPENROUTER_API_KEY;
+		return '' !== PRV_Key_Store::get_key();
 	}
 }

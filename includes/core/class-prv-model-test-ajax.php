@@ -15,10 +15,14 @@ declare(strict_types=1);
  * This is a point-in-time check (not a monitor) -- the UI labels it as such.
  * Never displays the API key.
  *
+ * Key is resolved via PRV_Key_Store::get_key() (constant → admin option → none).
+ *
  * Who triggers: wp_ajax_prv_test_model (registered by PRV_Settings_Page).
- * Dependencies: PRV_Model_Registry, PRV_Perplexity_Provider, PRV_OpenRouter_Provider.
+ * Dependencies: PRV_Key_Store, PRV_Model_Registry, PRV_Perplexity_Provider,
+ *               PRV_OpenRouter_Provider.
  *
  * @see class-prv-settings-page.php  -- Registers the wp_ajax_ hook.
+ * @see class-prv-key-store.php      -- Key resolution.
  * @see class-prv-model-registry.php -- Provides model data by id.
  * @package PrVision
  */
@@ -62,17 +66,23 @@ class PRV_Model_Test_Ajax {
 		}
 		set_transient( $lock_key, 1, self::RATE_LIMIT_SECONDS );
 
+		// Resolve key through the store — never bypass to a direct constant read.
+		$api_key = PRV_Key_Store::get_key();
+		if ( '' === $api_key ) {
+			wp_send_json_error( array( 'message' => 'API key not configured — set it in wp-config.php or via Settings → Provider API Key.' ) );
+		}
+
 		$start    = microtime( true );
 		$provider = ( 'perplexity/sonar' === $slug )
 			? new PRV_Perplexity_Provider()
 			: new PRV_OpenRouter_Provider( $slug );
 
-		if ( ! $provider->is_configured() ) {
-			wp_send_json_error( array( 'message' => 'API key not configured (check wp-config.php).' ) );
-		}
-
 		try {
-			$provider->probe( 'what is BPC-157' );
+			if ( $provider instanceof PRV_OpenRouter_Provider ) {
+				$provider->probe_with_key( 'what is BPC-157', $api_key );
+			} else {
+				$provider->probe( 'what is BPC-157' );
+			}
 			$ms = (int) round( ( microtime( true ) - $start ) * 1000 );
 			wp_send_json_success(
 				array(

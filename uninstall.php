@@ -11,8 +11,12 @@
  * prv_last_run_at, prv_last_run_counts, prv_last_run_truncated,
  * prv_last_run_truncated_at -- all purged by the prv_ wildcard DELETE below.
  *
- * @see ARCHITECTURE.md     -- Section Uninstall specification.
+ * v0.2.3 addition: prv_provider_key_enc (encrypted API key) -- also purged
+ * by the prv_ wildcard DELETE below. No plaintext is stored.
+ *
+ * @see ARCHITECTURE.md          -- Section Uninstall specification.
  * @see class-prv-deactivator.php -- Clears cron on deactivation.
+ * @see class-prv-key-store.php   -- Encrypted key storage (prv_provider_key_enc).
  * @package PrVision
  */
 
@@ -28,8 +32,9 @@ $table = $wpdb->prefix . 'prv_ai_visibility';
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
 
-/* ── 2. Delete all prv_ prefixed options (covers v0.1 + v0.2 keys) ── */
+/* ── 2. Delete all prv_ prefixed options (v0.1, v0.2, v0.2.3) ───── */
 
+// Covers prv_provider_key_enc (v0.2.3) along with all prior option keys.
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
 	"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'prv\_%'"
