@@ -27,7 +27,7 @@ if ( ! defined( 'ARRAY_N' ) ) {
 	define( 'ARRAY_N', 'ARRAY_N' );
 }
 
-define( 'PRV_VERSION', '0.3.0' );
+define( 'PRV_VERSION', '0.3.1' );
 define( 'PRV_PLUGIN_FILE', __DIR__ . '/../pr-vision.php' );
 define( 'PRV_PLUGIN_DIR', realpath( __DIR__ . '/..' ) . '/' );
 define( 'PRV_PLUGIN_URL', 'http://example.test/wp-content/plugins/pr-vision/' );

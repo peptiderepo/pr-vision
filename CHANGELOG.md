@@ -7,6 +7,28 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [0.3.1] — 2026-06-15
+
+Self-healing cron scheduling: `PRV_Cron_Guard` ensures managed WP-Cron events
+are re-scheduled on `init` when missing (e.g. after an rsync deploy that
+bypasses the activation hook).
+
+### Fixed
+- Managed cron hooks (`prv_weekly_probe`, `prv_daily_prune`) are now
+  re-scheduled automatically on any page load where they are missing.
+  Delegates to `PRV_Cron::schedule()` and `PRV_Prune_Cron::schedule()` so
+  recurrence and first-run offset are identical to what the activator sets.
+  Hot-path cost: two `wp_next_scheduled()` checks; no DB writes unless an
+  event is missing.
+
+### Added
+- **`PRV_Cron_Guard`** (`includes/core/class-prv-cron-guard.php`) — idempotent
+  guard registered on `init`; calls canonical scheduler methods when missing.
+- `PRV_Plugin::init()` — wires `PRV_Cron_Guard::register_hooks()`.
+- Tests: `test-cron-guard.php`.
+
+---
+
 ## [0.3.0] — 2026-06-15
 
 Per-call cost accountability + LLM call audit trail. Every probe call now
