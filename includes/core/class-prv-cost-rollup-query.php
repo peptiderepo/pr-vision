@@ -148,10 +148,9 @@ class PRV_Cost_Rollup_Query {
 				$group_col = 'run_id';
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT {$group_col} AS group_key,
 				        COUNT(*) AS calls,
 				        COALESCE(SUM(cost_usd),0) AS total_cost,
@@ -169,6 +168,7 @@ class PRV_Cost_Rollup_Query {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable
 
 		$result = array();
 		foreach ( (array) $rows as $row ) {

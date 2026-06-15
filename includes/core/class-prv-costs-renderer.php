@@ -120,10 +120,22 @@ class PRV_Costs_Renderer {
 	 */
 	public function render_subnav( string $active ): void {
 		$tabs = array(
-			'dashboard' => array( 'label' => __( 'Dashboard', 'pr-vision' ), 'slug' => 'pr-vision' ),
-			'costs'     => array( 'label' => __( 'Costs', 'pr-vision' ), 'slug' => 'pr-vision-costs' ),
-			'calls'     => array( 'label' => __( 'Call Log', 'pr-vision' ), 'slug' => 'pr-vision-calls' ),
-			'settings'  => array( 'label' => __( 'Settings', 'pr-vision' ), 'slug' => 'pr-vision-settings' ),
+			'dashboard' => array(
+				'label' => __( 'Dashboard', 'pr-vision' ),
+				'slug'  => 'pr-vision',
+			),
+			'costs'     => array(
+				'label' => __( 'Costs', 'pr-vision' ),
+				'slug'  => 'pr-vision-costs',
+			),
+			'calls'     => array(
+				'label' => __( 'Call Log', 'pr-vision' ),
+				'slug'  => 'pr-vision-calls',
+			),
+			'settings'  => array(
+				'label' => __( 'Settings', 'pr-vision' ),
+				'slug'  => 'pr-vision-settings',
+			),
 		);
 		echo '<nav class="prv-subnav" aria-label="' . esc_attr__( 'PR Vision navigation', 'pr-vision' ) . '">';
 		foreach ( $tabs as $key => $tab ) {
@@ -223,7 +235,13 @@ class PRV_Costs_Renderer {
 		foreach ( $levels as $lvl ) {
 			$is_active = ( $lvl === $level );
 			$cls       = 'prv-seg-btn' . ( $is_active ? ' prv-seg-btn--active' : '' );
-			$url       = add_query_arg( array( 'prv_level' => $lvl, 'prv_offset' => 0 ), $base_url );
+			$url       = add_query_arg(
+				array(
+					'prv_level'  => $lvl,
+					'prv_offset' => 0,
+				),
+				$base_url
+			);
 			echo '<a href="' . esc_url( $url ) . '" class="' . esc_attr( $cls ) . '"' . ( $is_active ? ' aria-current="true"' : '' ) . '>';
 			echo esc_html( ucfirst( $lvl ) );
 			echo '</a>';

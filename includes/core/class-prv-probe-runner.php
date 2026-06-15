@@ -51,7 +51,7 @@ class PRV_Probe_Runner {
 	 * @param PRV_Capture_Writer|null $capture Injected for testing; auto-created otherwise.
 	 */
 	public function __construct( ?PRV_Cost_Ledger $ledger = null, ?PRV_Capture_Writer $capture = null ) {
-		$this->ledger  = $ledger  ?? new PRV_Cost_Ledger();
+		$this->ledger  = $ledger ?? new PRV_Cost_Ledger();
 		$this->capture = $capture ?? new PRV_Capture_Writer();
 	}
 

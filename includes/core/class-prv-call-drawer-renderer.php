@@ -67,7 +67,7 @@ class PRV_Call_Drawer_Renderer {
 	 *
 	 * Side effects: Outputs HTML.
 	 *
-	 * @param array<string, mixed>      $meta Call metadata row.
+	 * @param array<string, mixed>       $meta Call metadata row.
 	 * @param array<string, string>|null $io   I/O record or null (pruned/missing).
 	 *
 	 * @return void
@@ -198,13 +198,9 @@ class PRV_Call_Drawer_Renderer {
 				)
 			);
 			echo '</div></div>';
-		} elseif ( $is_legacy ) {
-			// Already shown in prompt section; no duplicate.
-		} elseif ( $is_pruned ) {
-			// Already shown.
-		} elseif ( $has_io && isset( $io['response_text'] ) && '' !== $io['response_text'] ) {
+		} elseif ( ! $is_legacy && ! $is_pruned && $has_io && isset( $io['response_text'] ) && '' !== $io['response_text'] ) {
 			echo '<pre id="prv-response-text" class="prv-code-block">' . esc_html( $io['response_text'] ) . '</pre>';
-		} else {
+		} elseif ( ! $is_error && ! $is_legacy && ! $is_pruned ) {
 			echo '<p class="prv-drawer-na">—</p>';
 		}
 		echo '</div>';
@@ -263,7 +259,7 @@ class PRV_Call_Drawer_Renderer {
 	 *
 	 * @return void
 	 */
-		private function render_inline_script(): void {
+	private function render_inline_script(): void {
 		PRV_Call_Drawer_Script::render(
 			wp_create_nonce( PRV_Call_Detail_Ajax::NONCE_ACTION ),
 			admin_url( 'admin-ajax.php' )

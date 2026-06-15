@@ -51,22 +51,24 @@ class PRV_Call_Log_Query {
 		list( $where_sql, $where_args ) = $this->build_where( $filters );
 
 		// Count query.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$total = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT COUNT(*) FROM {$table} {$where_sql}",
 				...$where_args
 			)
 		);
+		// phpcs:enable
 
 		$pages = $total > 0 ? (int) ceil( $total / self::PAGE_SIZE ) : 1;
 
 		// Data query.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$data_args   = $where_args;
+		$data_args[] = self::PAGE_SIZE;
+		$data_args[] = $offset;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT id, visibility_row, run_id, peptide_slug, model, intent_label,
 				        tokens_in, tokens_out, cost_usd, latency_ms, cited,
 				        http_status, captured_at, config_version
@@ -74,12 +76,11 @@ class PRV_Call_Log_Query {
 				   {$where_sql}
 				   ORDER BY captured_at DESC
 				   LIMIT %d OFFSET %d",
-				...$where_args,
-				self::PAGE_SIZE,
-				$offset
+				...$data_args
 			),
 			ARRAY_A
 		);
+		// phpcs:enable
 
 		return array(
 			'rows'  => is_array( $rows ) ? $rows : array(),

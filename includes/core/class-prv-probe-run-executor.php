@@ -8,22 +8,13 @@
 declare(strict_types=1);
 
 /**
- * Executes a single probe run's inner loop: peptides × intents × models.
+ * Executes one probe run's inner loop: peptides × intents × models.
+ * Split from PRV_Probe_Runner to stay under 300 lines.
  *
- * Split from PRV_Probe_Runner to keep each class under 300 lines.
- * Called only by PRV_Probe_Runner::execute_run() (inside the run-lock).
+ * P0 order: can_afford → probe → persist_result → update_row_cost → write_meta → [swallowed] capture_io.
  *
- * Capture ordering (P0 mandatory):
- *   can_afford → probe → persist_result → update_row_cost → write_meta → capture_io
- *   capture_io is wrapped in a swallowing try/catch — failure cannot throw.
- *
- * Who triggers: PRV_Probe_Runner::execute_run().
- * Dependencies: PRV_Cost_Ledger, PRV_Capture_Writer, PRV_Table_Manager,
- *               PRV_Config, PRV_Config_Version, PRV_Model_Registry, providers.
- *
- * @see class-prv-probe-runner.php    — Acquires lock + calls run().
- * @see class-prv-capture-writer.php  — Per-call metadata + I/O writer (P0).
- * @see ARCHITECTURE.md               — Section Probe run flow v0.3.0.
+ * @see class-prv-probe-runner.php   — Acquires lock + calls execute().
+ * @see class-prv-capture-writer.php — Allowlist-only capture writer (P0).
  * @package PrVision
  */
 class PRV_Probe_Run_Executor {
@@ -60,7 +51,6 @@ class PRV_Probe_Run_Executor {
 	 *
 	 * @param string $run_id     UUID for this run.
 	 * @param int    $config_ver Config version at run time.
-	 *
 	 * @return array{probed: int, skipped_budget: int, skipped_error: int, truncated: bool, run_id: string}
 	 */
 	public function execute(
@@ -73,6 +63,7 @@ class PRV_Probe_Run_Executor {
 		$model_outcomes = array();
 
 		foreach ( $models as $slug ) {
+			// phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
 			$model_outcomes[ $slug ] = array( 'probed' => 0, 'errors' => 0 );
 		}
 
@@ -116,17 +107,16 @@ class PRV_Probe_Run_Executor {
 	/**
 	 * Execute one probe combination in mandatory P0 order.
 	 *
-	 * @param string                                         $run_id         Run UUID.
-	 * @param array<string,string>                           $peptide        Peptide config.
-	 * @param string                                         $model          Model slug.
-	 * @param string                                         $intent_tpl     Intent template.
-	 * @param string                                         $query          Rendered query.
-	 * @param int                                            $config_ver     Config version.
-	 * @param array<string,mixed>                            &$counts        Counts (modified).
-	 * @param array<string,array{probed:int,errors:int}>     &$model_outcomes Outcomes (modified).
-	 * @param bool                                           &$budget_hit    Budget flag (modified).
-	 *
-	 * @return void
+	 * @param string                                     $run_id         Run UUID.
+	 * @param array<string,string>                       $peptide        Peptide config.
+	 * @param string                                     $model          Model slug.
+	 * @param string                                     $intent_tpl     Intent template.
+	 * @param string                                     $query          Rendered query.
+	 * @param int                                        $config_ver     Config version.
+	 * @param array<string,mixed>                        &$counts        Counts (modified).
+	 * @param array<string,array{probed:int,errors:int}> &$model_outcomes Outcomes (modified).
+	 * @param bool                                       &$budget_hit    Budget flag (modified).
+	 * @return void Modifies $counts and $model_outcomes in-place.
 	 */
 	private function probe_one(
 		string $run_id,
@@ -171,18 +161,23 @@ class PRV_Probe_Run_Executor {
 			if ( isset( $model_outcomes[ $model ] ) ) {
 				++$model_outcomes[ $model ]['errors'];
 			}
-			$call_id = $this->capture->write_meta(
-				array(
-					'visibility_row' => null, 'run_id' => $run_id,
-					'peptide_slug' => $peptide['slug'], 'model' => $model,
-					'intent_label' => $intent_tpl, 'tokens_in' => null,
-					'tokens_out' => null, 'cost_usd' => 0.0,
-					'latency_ms' => $latency_ms, 'cited' => null,
-					'http_status' => $http_status, 'config_version' => $config_ver,
-				)
-			);
+			// phpcs:disable WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound, WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine
+			$call_id = $this->capture->write_meta( array(
+				'visibility_row' => null,        'run_id'         => $run_id,
+				'peptide_slug'   => $peptide['slug'], 'model'      => $model,
+				'intent_label'   => $intent_tpl, 'tokens_in'      => null,
+				'tokens_out'     => null,        'cost_usd'       => 0.0,
+				'latency_ms'     => $latency_ms, 'cited'          => null,
+				'http_status'    => $http_status, 'config_version' => $config_ver,
+			) );
+			// phpcs:enable
 			if ( $call_id > 0 ) {
-				try { $this->capture->write_io( $call_id, $query, '' ); } catch ( \Throwable $io_err ) {}
+				try {
+					$this->capture->write_io( $call_id, $query, '' );
+				} catch ( \Throwable $io_err ) {
+					// Best-effort: I/O capture failure must not propagate (P0-4).
+					unset( $io_err );
+				}
 			}
 			return;
 		}
@@ -192,18 +187,23 @@ class PRV_Probe_Run_Executor {
 			$this->ledger->update_row_cost( $row_id, $result->get_cost_usd() );
 		}
 
-		$call_id = $this->capture->write_meta(
-			array(
-				'visibility_row' => $row_id > 0 ? $row_id : null, 'run_id' => $run_id,
-				'peptide_slug' => $peptide['slug'], 'model' => $model,
-				'intent_label' => $intent_tpl, 'tokens_in' => $result->get_tokens_in(),
-				'tokens_out' => $result->get_tokens_out(), 'cost_usd' => $result->get_cost_usd(),
-				'latency_ms' => $latency_ms, 'cited' => $result->is_cited() ? 1 : 0,
-				'http_status' => $http_status, 'config_version' => $config_ver,
-			)
-		);
+		// phpcs:disable WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound, WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine
+		$call_id = $this->capture->write_meta( array(
+			'visibility_row' => $row_id > 0 ? $row_id : null, 'run_id'     => $run_id,
+			'peptide_slug'   => $peptide['slug'],             'model'       => $model,
+			'intent_label'   => $intent_tpl,  'tokens_in'   => $result->get_tokens_in(),
+			'tokens_out'     => $result->get_tokens_out(),    'cost_usd'    => $result->get_cost_usd(),
+			'latency_ms'     => $latency_ms,  'cited'        => $result->is_cited() ? 1 : 0,
+			'http_status'    => $http_status, 'config_version' => $config_ver,
+		) );
+		// phpcs:enable
 		if ( $call_id > 0 ) {
-			try { $this->capture->write_io( $call_id, $query, $result->get_raw_excerpt() ); } catch ( \Throwable $io_err ) {}
+			try {
+				$this->capture->write_io( $call_id, $query, $result->get_raw_excerpt() );
+			} catch ( \Throwable $io_err ) {
+				// Best-effort: I/O capture failure must not propagate (P0-4).
+				unset( $io_err );
+			}
 		}
 
 		++$counts['probed'];
@@ -215,30 +215,29 @@ class PRV_Probe_Run_Executor {
 	/**
 	 * Persist one probe result to prv_ai_visibility.
 	 *
-	 * @param string $run_id UUID. @param array<string,string> $peptide Peptide config.
-	 * @param string $model Model slug. @param string $intent_tpl Intent template.
-	 * @param PRV_Probe_Result $result Probe result. @param int $config_ver Config version.
-	 *
+	 * @param string               $run_id     Run UUID.
+	 * @param array<string,string> $peptide    Peptide config.
+	 * @param string               $model      Model slug.
+	 * @param string               $intent_tpl Intent template.
+	 * @param PRV_Probe_Result     $result     Probe result.
+	 * @param int                  $config_ver Config version.
 	 * @return int Row ID, or 0 on failure.
 	 */
 	private function persist_result( string $run_id, array $peptide, string $model, string $intent_tpl, PRV_Probe_Result $result, int $config_ver ): int {
 		global $wpdb;
 		$table = PRV_Table_Manager::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$wpdb->insert(
-			$table,
-			array(
-				'run_id' => $run_id, 'captured_at' => current_time( 'mysql', true ),
-				'peptide_slug' => $peptide['slug'], 'peptide_label' => $peptide['label'],
-				'model' => $model, 'prompt_intent' => $intent_tpl,
-				'cited' => $result->is_cited() ? 1 : 0, 'our_position' => $result->get_our_position(),
-				'source_domains' => wp_json_encode( $result->get_source_domains() ),
-				'raw_excerpt' => $result->get_raw_excerpt(),
-				'cost_usd' => number_format( $result->get_cost_usd(), 8, '.', '' ),
-				'config_version' => $config_ver,
-			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%d' )
-		);
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine
+		$wpdb->insert( $table, array(
+			'run_id'         => $run_id,       'captured_at'    => current_time( 'mysql', true ),
+			'peptide_slug'   => $peptide['slug'], 'peptide_label' => $peptide['label'],
+			'model'          => $model,         'prompt_intent'  => $intent_tpl,
+			'cited'          => $result->is_cited() ? 1 : 0, 'our_position' => $result->get_our_position(),
+			'source_domains' => wp_json_encode( $result->get_source_domains() ),
+			'raw_excerpt'    => $result->get_raw_excerpt(),
+			'cost_usd'       => number_format( $result->get_cost_usd(), 8, '.', '' ),
+			'config_version' => $config_ver,
+		), array( '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%d' ) );
+		// phpcs:enable
 		return (int) $wpdb->insert_id;
 	}
 
@@ -246,7 +245,6 @@ class PRV_Probe_Run_Executor {
 	 * Extract HTTP status from a gateway exception message.
 	 *
 	 * @param \Exception $e Caught exception.
-	 *
 	 * @return int HTTP status, or 0 if unknown.
 	 */
 	private function extract_http_status( \Exception $e ): int {
@@ -259,7 +257,8 @@ class PRV_Probe_Run_Executor {
 	/**
 	 * Resolve provider instance for a model slug.
 	 *
-	 * @param string $model Model slug. @return PRV_Probe_Provider|null
+	 * @param string $model Model slug.
+	 * @return PRV_Probe_Provider|null Provider, or null if not configured.
 	 */
 	private function resolve_provider( string $model ): ?PRV_Probe_Provider {
 		if ( 'perplexity/sonar' === $model ) {
@@ -271,7 +270,8 @@ class PRV_Probe_Run_Executor {
 	/**
 	 * Conservative per-call cost estimate for budget pre-check.
 	 *
-	 * @param string $model Model slug. @return float Estimated USD.
+	 * @param string $model Model slug.
+	 * @return float Estimated USD per call.
 	 */
 	private function get_estimated_cost( string $model ): float {
 		if ( 'perplexity/sonar' === $model ) {
@@ -283,9 +283,8 @@ class PRV_Probe_Run_Executor {
 	/**
 	 * Write the API-key status option based on run outcomes.
 	 *
-	 * @param array<string,mixed>                          $counts         Run counts.
-	 * @param array<string,array{probed:int,errors:int}>   $model_outcomes Model outcomes.
-	 *
+	 * @param array<string,mixed>                        $counts         Run counts.
+	 * @param array<string,array{probed:int,errors:int}> $model_outcomes Model outcomes.
 	 * @return void
 	 */
 	private function settle_api_key_status( array $counts, array $model_outcomes ): void {
@@ -296,4 +295,5 @@ class PRV_Probe_Run_Executor {
 		}
 		update_option( 'prv_api_key_last_check', current_time( 'mysql', true ) );
 	}
+
 }

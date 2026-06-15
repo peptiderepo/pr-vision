@@ -109,7 +109,7 @@ class PRV_Admin_Page_Css {
 	}
 
 	/**
-	 * v0.3.0 additions: subnav, costs, call-log, drawer components.
+	 * V0.3.0 additions: subnav, costs, call-log, drawer components.
 	 *
 	 * @return string
 	 */

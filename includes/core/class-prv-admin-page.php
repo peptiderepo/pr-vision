@@ -198,7 +198,9 @@ class PRV_Admin_Page {
 			)
 		);
 		echo '</p></div>';
-	}	/**
+	}
+
+	/**
 	 * Return the combined CSS string for all PR Vision admin screens.
 	 *
 	 * Delegates to PRV_Admin_Page_Css to keep this class under 300 lines.
