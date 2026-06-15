@@ -17,13 +17,15 @@ declare(strict_types=1);
  * Who triggers: plugins_loaded action (pr-vision.php).
  * Dependencies: PRV_Upgrader, PRV_Cron, PRV_Admin_Page, PRV_Settings_Page,
  *               PRV_Settings_Controller, PRV_Costs_Page, PRV_Call_Log_Page,
- *               PRV_Call_Detail_Ajax, PRV_Prune_Cron, PRV_Collector_Registry.
+ *               PRV_Call_Detail_Ajax, PRV_Prune_Cron, PRV_Cron_Guard,
+ *               PRV_Collector_Registry.
  *
  * @see ARCHITECTURE.md             -- Boot sequence diagram.
  * @see class-prv-upgrader.php      -- Runs migrations on every boot.
  * @see class-prv-costs-page.php    -- [v0.3.0] Costs admin sub-page.
  * @see class-prv-call-log-page.php -- [v0.3.0] Call Log admin sub-page.
  * @see class-prv-prune-cron.php    -- [v0.3.0] Daily prune cron.
+ * @see class-prv-cron-guard.php    -- [v0.3.1] Self-healing cron guard.
  * @package PrVision
  */
 class PRV_Plugin {
@@ -49,6 +51,9 @@ class PRV_Plugin {
 
 		$prune = new PRV_Prune_Cron();
 		$prune->register_hooks();
+
+		$guard = new PRV_Cron_Guard();
+		$guard->register_hooks();
 
 		if ( is_admin() ) {
 			$page = new PRV_Admin_Page();
