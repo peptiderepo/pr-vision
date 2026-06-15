@@ -11,15 +11,18 @@ declare(strict_types=1);
  * Renders the PR Vision Settings admin page (dark "Assay" theme).
  *
  * Coordinates the page sections: styles, notices, model manager card
- * (via PRV_Model_Manager_Table), secondary config form, sticky save-bar,
- * and inline JS. All output is escaped at the point of emission.
+ * (via PRV_Model_Manager_Table), secondary config form, provider API key
+ * card (via PRV_Key_Manager_Renderer), sticky save-bar, and inline JS.
+ * All output is escaped at the point of emission.
  *
  * Who triggers: PRV_Settings_Page::render_page().
  * Dependencies: PRV_Model_Registry, PRV_Config, PRV_Cron, PRV_Run_Lock,
- *               PRV_Config_Version, PRV_Model_Manager_Table.
+ *               PRV_Config_Version, PRV_Model_Manager_Table,
+ *               PRV_Key_Manager_Renderer.
  *
- * @see class-prv-settings-page.php     -- Instantiates and calls render().
- * @see class-prv-model-manager-table.php -- Renders the model table.
+ * @see class-prv-settings-page.php        -- Instantiates and calls render().
+ * @see class-prv-model-manager-table.php  -- Renders the model table.
+ * @see class-prv-key-manager-renderer.php -- Renders the key card.
  * @package PrVision
  */
 class PRV_Settings_Renderer {
@@ -40,6 +43,7 @@ class PRV_Settings_Renderer {
 		( new PRV_Model_Manager_Table() )->render();
 		echo '</div>';
 		$this->render_config_form();
+		( new PRV_Key_Manager_Renderer() )->render();
 		$this->render_save_bar();
 		$this->render_scripts();
 		echo '</div>';
@@ -108,7 +112,7 @@ class PRV_Settings_Renderer {
 	}
 
 	/**
-	 * Render POST-redirect notices (saved, run done, model CRUD, lock).
+	 * Render POST-redirect notices (saved, run done, model CRUD, key actions, lock).
 	 *
 	 * @return void
 	 */
@@ -118,10 +122,10 @@ class PRV_Settings_Renderer {
 			echo '<div class="prv-notice prv-notice-success">' . esc_html__( 'Settings saved.', 'pr-vision' ) . '</div>';
 		}
 		if ( ! empty( $_GET['prv_run_done'] ) ) {
-			$p    = absint( $_GET['prv_probed'] ?? 0 );
-			$s    = absint( $_GET['prv_skipped'] ?? 0 );
-			$trn  = ! empty( $_GET['prv_truncated'] );
-			$msg  = sprintf( 'Run complete: %d probed, %d skipped.%s', $p, $s, $trn ? ' Last run was truncated by the monthly budget cap.' : '' );
+			$p   = absint( $_GET['prv_probed'] ?? 0 );
+			$s   = absint( $_GET['prv_skipped'] ?? 0 );
+			$trn = ! empty( $_GET['prv_truncated'] );
+			$msg = sprintf( 'Run complete: %d probed, %d skipped.%s', $p, $s, $trn ? ' Last run was truncated by the monthly budget cap.' : '' );
 			echo '<div class="prv-notice prv-notice-success">' . esc_html( $msg ) . '</div>';
 		}
 		if ( ! empty( $_GET['prv_run_locked'] ) ) {
@@ -136,11 +140,20 @@ class PRV_Settings_Renderer {
 		if ( ! empty( $_GET['prv_model_removed'] ) ) {
 			echo '<div class="prv-notice prv-notice-success">' . esc_html__( 'Model removed.', 'pr-vision' ) . '</div>';
 		}
+		if ( ! empty( $_GET['prv_key_set'] ) ) {
+			echo '<div class="prv-notice prv-notice-success">' . esc_html__( 'API key saved.', 'pr-vision' ) . '</div>';
+		}
+		if ( ! empty( $_GET['prv_key_removed'] ) ) {
+			echo '<div class="prv-notice prv-notice-success">' . esc_html__( 'API key removed.', 'pr-vision' ) . '</div>';
+		}
+		if ( ! empty( $_GET['prv_key_error'] ) ) {
+			echo '<div class="prv-notice prv-notice-warning">' . esc_html__( 'Could not save API key — encryption failed. Check server logs.', 'pr-vision' ) . '</div>';
+		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	}
 
 	/**
-	 * Render the secondary config form.
+	 * Render the secondary config form (cadence, budget, peptides, intents).
 	 *
 	 * @return void
 	 */
@@ -154,7 +167,6 @@ class PRV_Settings_Renderer {
 		$this->render_projected_cost();
 		$this->render_peptides_field();
 		$this->render_intents_field();
-		$this->render_api_key_status();
 		echo '</div></form>';
 	}
 
@@ -231,25 +243,6 @@ class PRV_Settings_Renderer {
 		$intents = PRV_Config::get_prompt_intents();
 		echo '<div class="prv-field"><label class="prv-label" for="prv_prompt_intents_text">' . esc_html__( 'Prompt intents (one per line, use {peptide})', 'pr-vision' ) . '</label>';
 		echo '<textarea class="prv-input" id="prv_prompt_intents_text" name="prv_prompt_intents_text" rows="4" data-scoring-relevant="1">' . esc_textarea( implode( "\n", $intents ) ) . '</textarea></div>';
-	}
-
-	/**
-	 * Render the read-only API-key three-state status.
-	 *
-	 * @return void
-	 */
-	private function render_api_key_status(): void {
-		$defined = defined( 'PRV_OPENROUTER_API_KEY' ) && '' !== constant( 'PRV_OPENROUTER_API_KEY' );
-		$status  = (string) get_option( 'prv_api_key_status', 'unknown' );
-		echo '<div class="prv-field"><div class="prv-section-label">' . esc_html__( 'API Key Status (read-only)', 'pr-vision' ) . '</div>';
-		if ( ! $defined ) {
-			echo '<span class="prv-api-status prv-api-undef">&#9679; ' . esc_html__( 'Not defined — set PRV_OPENROUTER_API_KEY in wp-config.php', 'pr-vision' ) . '</span>';
-		} elseif ( 'failed' === $status ) {
-			echo '<span class="prv-api-status prv-api-fail">&#9679; ' . esc_html__( 'Defined — last run failed (key may be invalid or revoked)', 'pr-vision' ) . '</span>';
-		} else {
-			echo '<span class="prv-api-status prv-api-ok">&#9679; ' . esc_html__( 'Defined — last run OK', 'pr-vision' ) . '</span>';
-		}
-		echo '</div>';
 	}
 
 	/**

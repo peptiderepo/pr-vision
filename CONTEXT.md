@@ -126,3 +126,18 @@ The plugin's scores are API-probe measurements, not real-world consumer LLM usag
 Month-to-date spend in USD, summed from the `cost_usd` column for rows in the current calendar month.
 
 **Code identifiers:** `PRV_Cost_Ledger::get_month_to_date_usd()`.
+
+### Key Store (v0.2.3)
+The subsystem that manages the OpenRouter API key with a precedence chain and encrypted-at-rest storage. Precedence: `PRV_OPENROUTER_API_KEY` wp-config constant (highest) → encrypted admin option `prv_provider_key_enc` → none. All key reads by providers and AJAX handlers route through `PRV_Key_Store::get_key()`. The plaintext key is never stored in any option, log, or client-side surface.
+
+**Code identifiers:** `PRV_Key_Store`, `PRV_Key_Store::get_key()`, `PRV_Key_Store::store_key()`, `PRV_Key_Store::clear_key()`, `PRV_Key_Store::get_source()`, `prv_provider_key_enc` option.
+
+### Write-only Key UI (v0.2.3)
+The Settings page section that allows the operator to set/replace/clear the API key without the key ever being rendered in the browser. The password input always renders empty. The UI shows only the key *source* (wp-config / admin / not set) and the last-run health state. The key value is never output to page HTML, JS, REST responses, or logs.
+
+**Code identifiers:** `PRV_Key_Manager_Renderer`, `PRV_Key_Test_Ajax`, `PRV_Settings_Controller::handle_key_set()`, `PRV_Settings_Controller::handle_key_remove()`.
+
+### Encryption Key (v0.2.3)
+The symmetric key used to encrypt/decrypt `prv_provider_key_enc`. Derived via SHA-256 from `AUTH_KEY + SECURE_AUTH_KEY` (or `wp_salt()` fallback) — environment-specific and never stored. Derived fresh at every encrypt/decrypt call.
+
+**Code identifiers:** `PRV_Key_Store::derive_encryption_key()`, `PRV_Crypto_Helper::encrypt()`, `PRV_Crypto_Helper::decrypt()`.

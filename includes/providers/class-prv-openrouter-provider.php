@@ -14,21 +14,19 @@ declare(strict_types=1);
  * at construction time; the runner instantiates one provider per model from
  * PRV_Config::get_models().
  *
- * GPT-search (openai/gpt-4o-search-preview) and Gemini-search
- * (google/gemini-2.0-flash-001) do not return a structured citations array
- * via OpenRouter — citations are parsed from URLs embedded in the response
- * text or from any 'annotations' key the model may include.
- *
- * Required WP-config constant:
- *   PRV_OPENROUTER_API_KEY — OpenRouter key (sk-or-…)
+ * API key is resolved through PRV_Key_Store::get_key() (constant → admin
+ * option → none), never read directly from the constant.
  *
  * Who triggers: PRV_Probe_Runner via PRV_Probe_Provider interface.
- * Dependencies: PRV_Gateway_Client, PRV_Citation_Detector, PRV_Probe_Result.
+ *               PRV_Key_Test_Ajax (probe_with_key for test path).
+ * Dependencies: PRV_Key_Store, PRV_Gateway_Client, PRV_Citation_Detector,
+ *               PRV_Probe_Result.
  *
  * @see interface-prv-probe-provider.php  — Interface this implements.
+ * @see class-prv-key-store.php           — Single key resolver.
  * @see class-prv-gateway-client.php      — Shared HTTP + retry logic.
  * @see class-prv-citation-detector.php   — Domain extraction + detection.
- * @see ARCHITECTURE.md                   — §Provider implementations.
+ * @see ARCHITECTURE.md                   — §Provider implementations, §Key management.
  * @package PrVision
  */
 class PRV_OpenRouter_Provider implements PRV_Probe_Provider {
@@ -75,14 +73,36 @@ class PRV_OpenRouter_Provider implements PRV_Probe_Provider {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * Resolves the key via PRV_Key_Store (constant → option → none).
+	 *
 	 * @param string $query The search query to probe.
+	 *
+	 * @return PRV_Probe_Result
+	 * @throws \RuntimeException On permanent API failure or no key configured.
+	 */
+	public function probe( string $query ): PRV_Probe_Result {
+		$api_key = PRV_Key_Store::get_key();
+		if ( '' === $api_key ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- exception, not HTML
+			throw new \RuntimeException( 'PRV_OPENROUTER_API_KEY is not configured. Set it in wp-config.php or via Settings.' );
+		}
+		return $this->probe_with_key( $query, $api_key );
+	}
+
+	/**
+	 * Probe using a caller-supplied key (used by PRV_Key_Test_Ajax).
+	 *
+	 * Accepts the key as a parameter so the test path can call this without
+	 * re-resolving from the store. The key is passed only to the gateway
+	 * (as an Authorization header); it is never logged, stored, or returned.
+	 *
+	 * @param string $query   The search query to probe.
+	 * @param string $api_key Plaintext API key (server-side only; never exposed).
 	 *
 	 * @return PRV_Probe_Result
 	 * @throws \RuntimeException On permanent API failure.
 	 */
-	public function probe( string $query ): PRV_Probe_Result {
-		$api_key = $this->resolve_api_key();
-
+	public function probe_with_key( string $query, string $api_key ): PRV_Probe_Result {
 		$body = array(
 			'model'      => $this->model,
 			'messages'   => array(
@@ -156,22 +176,10 @@ class PRV_OpenRouter_Provider implements PRV_Probe_Provider {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * True when any source (constant or admin option) provides a non-empty key.
 	 */
 	public function is_configured(): bool {
-		return defined( 'PRV_OPENROUTER_API_KEY' ) && '' !== PRV_OPENROUTER_API_KEY;
-	}
-
-	/**
-	 * Retrieve the OpenRouter API key from wp-config constants.
-	 *
-	 * @return string
-	 * @throws \RuntimeException When the constant is not defined or empty.
-	 */
-	private function resolve_api_key(): string {
-		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) || '' === PRV_OPENROUTER_API_KEY ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- exception message, not HTML output
-			throw new \RuntimeException( __( 'PRV_OPENROUTER_API_KEY constant is not defined. Add it to wp-config.php.', 'pr-vision' ) );
-		}
-		return PRV_OPENROUTER_API_KEY;
+		return '' !== PRV_Key_Store::get_key();
 	}
 }
