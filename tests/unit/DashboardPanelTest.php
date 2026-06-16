@@ -76,9 +76,16 @@ class DashboardPanelTest extends TestCase {
 	}
 
 	public function test_collector_trendline_includes_config_version(): void {
-		$GLOBALS['prv_test_state']['wpdb_results'] = [
-			[ 'run_id' => 'run-001', 'captured_at' => '2026-06-01 10:00:00', 'cited_count' => 2, 'total_count' => 10, 'position_sum' => 0.5, 'config_version' => 1 ],
-			[ 'run_id' => 'run-002', 'captured_at' => '2026-06-08 10:00:00', 'cited_count' => 3, 'total_count' => 10, 'position_sum' => 0.6, 'config_version' => 2 ],
+		// Collector calls get_results() twice: (1) trendline, (2) standings.
+		// Use wpdb_results_queue to provide separate row sets for each call.
+		$GLOBALS['prv_test_state']['wpdb_results_queue'] = [
+			// 1st call: trendline rows.
+			[
+				[ 'run_id' => 'run-001', 'captured_at' => '2026-06-01 10:00:00', 'cited_count' => 2, 'total_count' => 10, 'position_sum' => 0.5, 'config_version' => 1 ],
+				[ 'run_id' => 'run-002', 'captured_at' => '2026-06-08 10:00:00', 'cited_count' => 3, 'total_count' => 10, 'position_sum' => 0.6, 'config_version' => 2 ],
+			],
+			// 2nd call: standings rows (empty — not needed for this assertion).
+			[],
 		];
 		$GLOBALS['prv_test_state']['wpdb_var'] = '2026-06-08 10:00:00';
 
@@ -91,6 +98,7 @@ class DashboardPanelTest extends TestCase {
 	}
 
 	public function test_collector_payload_has_new_keys(): void {
+		// Both get_results() calls return [] (no data needed for key-presence check).
 		$GLOBALS['prv_test_state']['wpdb_results'] = [];
 		$GLOBALS['prv_test_state']['wpdb_var']     = null;
 
@@ -102,8 +110,11 @@ class DashboardPanelTest extends TestCase {
 	}
 
 	public function test_null_config_version_preserved(): void {
-		$GLOBALS['prv_test_state']['wpdb_results'] = [
-			[ 'run_id' => 'run-001', 'captured_at' => '2026-06-01 10:00:00', 'cited_count' => 1, 'total_count' => 5, 'position_sum' => 0.25, 'config_version' => null ],
+		$GLOBALS['prv_test_state']['wpdb_results_queue'] = [
+			// 1st call: trendline rows.
+			[ [ 'run_id' => 'run-001', 'captured_at' => '2026-06-01 10:00:00', 'cited_count' => 1, 'total_count' => 5, 'position_sum' => 0.25, 'config_version' => null ] ],
+			// 2nd call: standings rows (empty).
+			[],
 		];
 		$GLOBALS['prv_test_state']['wpdb_var'] = '2026-06-01 10:00:00';
 

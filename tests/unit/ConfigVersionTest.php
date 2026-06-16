@@ -16,15 +16,6 @@ class ConfigVersionTest extends TestCase {
 
 	protected function setUp(): void {
 		prv_test_reset();
-		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) ) {
-			define( 'PRV_OPENROUTER_API_KEY', 'sk-or-test-key' );
-		}
-		if ( ! defined( 'PRV_CF_ACCOUNT_ID' ) ) {
-			define( 'PRV_CF_ACCOUNT_ID', '' );
-		}
-		if ( ! defined( 'PRV_CF_GATEWAY_ID' ) ) {
-			define( 'PRV_CF_GATEWAY_ID', '' );
-		}
 	}
 
 	public function test_maybe_seed_initial_version_creates_v1(): void {

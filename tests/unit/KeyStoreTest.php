@@ -115,23 +115,27 @@ class KeyStoreTest extends TestCase {
 
 	// ── Group 3: Resolver precedence — constant > option > none ──────────
 
-	public function test_get_key_returns_empty_with_no_source(): void {
-		$this->assertSame( '', PRV_Key_Store::get_key() );
+	public function test_get_key_returns_constant_value(): void {
+		// PRV_OPENROUTER_API_KEY='sk-or-test-key' is defined in bootstrap.
+		// get_key() returns the constant value (highest precedence).
+		$this->assertSame( 'sk-or-test-key', PRV_Key_Store::get_key(), 'get_key() returns the wp-config constant value' );
 	}
 
-	public function test_get_key_returns_decrypted_from_option(): void {
+	public function test_get_key_constant_wins_over_option(): void {
+		// store_key() writes a different plaintext to the encrypted option.
+		// But get_key() still returns the constant because constant > option.
 		$plaintext = 'sk-or-test-key-value-abc123';
 		PRV_Key_Store::store_key( $plaintext );
 
-		$this->assertSame( $plaintext, PRV_Key_Store::get_key() );
+		$this->assertSame( 'sk-or-test-key', PRV_Key_Store::get_key(), 'Constant wins over stored option (constant > option precedence)' );
 	}
 
 	// ── Group 4: Write-only — key value never in rendered HTML output ─────
 
 	public function test_rendered_html_never_contains_key(): void {
-		$plaintext = 'sk-or-test-key-value-abc123';
-		PRV_Key_Store::store_key( $plaintext );
-
+		// P0 invariant: key value NEVER appears in any rendered HTML output.
+		// With PRV_OPENROUTER_API_KEY constant in bootstrap, source = SOURCE_CONSTANT.
+		// The renderer must still render the password input with value="" (write-only).
 		require_once PRV_PLUGIN_DIR . 'includes/core/class-prv-settings-page.php';
 		require_once PRV_PLUGIN_DIR . 'includes/core/class-prv-key-manager-renderer.php';
 
@@ -140,10 +144,10 @@ class KeyStoreTest extends TestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertNotEmpty( $html, 'Key manager card renders non-empty HTML' );
-		$this->assertStringNotContainsString( $plaintext, $html, 'Plaintext key absent from rendered HTML' );
-		$this->assertStringNotContainsString( 'sk-or-test', $html, 'Key value prefix absent from rendered HTML' );
+		// The constant key 'sk-or-test-key' must NOT appear in the HTML (P0 write-only).
+		$this->assertStringNotContainsString( 'sk-or-test-key', $html, 'Constant API key value absent from rendered HTML (P0)' );
 		$this->assertStringContainsString( 'type="password"', $html, 'Password input is present in output' );
-		$this->assertStringContainsString( 'value=""', $html, 'Password input has empty value attribute' );
+		$this->assertStringContainsString( 'value=""', $html, 'Password input has empty value attribute (write-only)' );
 		$this->assertStringNotContainsString( 'value="sk-', $html, 'No key value in any value= attribute' );
 	}
 

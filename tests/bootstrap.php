@@ -46,6 +46,30 @@ define( 'PRV_TARGET_DOMAIN', 'peptiderepo.com' );
 define( 'PRV_IO_RETENTION_DEFAULT_DAYS', 90 );
 define( 'PRV_DAILY_PRUNE_HOOK', 'prv_daily_prune' );
 
+// Salt constants required by PRV_Key_Store::derive_encryption_key().
+// These provide deterministic 64-char salts matching the pattern in test-key-store.php.
+if ( ! defined( 'AUTH_KEY' ) ) {
+	define( 'AUTH_KEY', 'test-auth-key-at-least-64-chars-long-for-realistic-entropy-aaaa' );
+}
+if ( ! defined( 'SECURE_AUTH_KEY' ) ) {
+	define( 'SECURE_AUTH_KEY', 'test-secure-auth-key-64-chars-long-realistic-entropy-bbbb-cccc' );
+}
+
+// Provider key constant; defined here once so no test class defines it mid-run.
+// Tests that need a configured key get it from this constant (via PRV_Key_Store::get_key()).
+// The sentinel leak test (CaptureWriterTest) asserts this value does not appear in stored rows.
+if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) ) {
+	define( 'PRV_OPENROUTER_API_KEY', 'sk-or-test-key' );
+}
+
+// Cloudflare gateway constants (empty in test environment).
+if ( ! defined( 'PRV_CF_ACCOUNT_ID' ) ) {
+	define( 'PRV_CF_ACCOUNT_ID', '' );
+}
+if ( ! defined( 'PRV_CF_GATEWAY_ID' ) ) {
+	define( 'PRV_CF_GATEWAY_ID', '' );
+}
+
 /* ── Global test state ─────────────────────────────────────────────────── */
 
 $GLOBALS['prv_test_state'] = [
@@ -54,6 +78,7 @@ $GLOBALS['prv_test_state'] = [
 	'actions'              => [],
 	'wpdb_insert_id'       => 1,
 	'wpdb_results'         => [],
+	'wpdb_results_queue'   => [],
 	'wpdb_var'             => null,
 	'wpdb_row'             => null,
 	'cron_events'          => [],
@@ -70,6 +95,7 @@ function prv_test_reset(): void {
 		'actions'              => [],
 		'wpdb_insert_id'       => 1,
 		'wpdb_results'         => [],
+		'wpdb_results_queue'   => [],
 		'wpdb_var'             => null,
 		'wpdb_row'             => null,
 		'cron_events'          => [],
@@ -265,6 +291,10 @@ class stdClass_wpdb {
 	}
 	public function update( string $table, array $data, array $where, array $df = [], array $wf = [] ): int { return 1; }
 	public function get_results( string $query, string $output = 'OBJECT' ): array {
+		// Queue mode: if wpdb_results_queue is non-empty, shift one result set.
+		if ( ! empty( $GLOBALS['prv_test_state']['wpdb_results_queue'] ) ) {
+			return (array) array_shift( $GLOBALS['prv_test_state']['wpdb_results_queue'] );
+		}
 		return is_array( $GLOBALS['prv_test_state']['wpdb_results'] ) ? $GLOBALS['prv_test_state']['wpdb_results'] : [];
 	}
 	public function get_row( string $query, string $output = 'OBJECT' ): mixed { return $GLOBALS['prv_test_state']['wpdb_row'] ?? null; }

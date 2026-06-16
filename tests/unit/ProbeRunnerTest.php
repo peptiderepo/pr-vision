@@ -37,15 +37,6 @@ class ProbeRunnerTest extends TestCase {
 
 	protected function setUp(): void {
 		prv_test_reset();
-		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) ) {
-			define( 'PRV_OPENROUTER_API_KEY', 'sk-or-test-key' );
-		}
-		if ( ! defined( 'PRV_CF_ACCOUNT_ID' ) ) {
-			define( 'PRV_CF_ACCOUNT_ID', '' );
-		}
-		if ( ! defined( 'PRV_CF_GATEWAY_ID' ) ) {
-			define( 'PRV_CF_GATEWAY_ID', '' );
-		}
 		$this->sonar_row  = [ 'id' => 'mdl_t1', 'slug' => 'perplexity/sonar', 'provider' => 'perplexity', 'enabled' => true, 'note' => '', 'health_status' => 'unknown', 'health_probed' => 0, 'health_errors' => 0, 'health_run_id' => null ];
 		$this->cited_body = json_encode( [ 'choices' => [ [ 'message' => [ 'content' => 'BPC-157 info.' ] ] ], 'citations' => [ 'https://peptiderepo.com/bpc-157/', 'https://examine.com' ], 'usage' => [ 'total_tokens' => 100 ] ] );
 	}

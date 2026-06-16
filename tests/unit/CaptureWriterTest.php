@@ -120,21 +120,18 @@ class CaptureWriterTest extends TestCase {
 		$this->assertSame( 'what is TB-500?', $err_io['prompt_text'], 'Error record stores rendered query as prompt_text' );
 	}
 
-	// ── Test 4 (P0 SECURITY — executor path): sentinel must not leak ──────
+	// ── Test 4 (P0 SECURITY — executor path): configured key must not store in rows ──
 
 	/**
-	 * Defines PRV_OPENROUTER_API_KEY as a process-scoped PHP constant.
-	 * Must run in a separate process to prevent that constant from bleeding
-	 * into sibling test classes (e.g. KeyStoreTest) within the same PHPUnit run.
+	 * Verifies the executor path does not store the configured API key value
+	 * (PRV_OPENROUTER_API_KEY, defined in bootstrap) in any DB row on a 401.
 	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * The test key 'sk-or-test-key' is defined in tests/bootstrap.php so it is
+	 * available for ALL tests without per-class define() calls. This test asserts
+	 * the value never appears in prv_call_meta or prv_call_io rows, verifying P0
+	 * security invariant: key does not leak through stored data regardless of path.
 	 */
 	public function test_p0_executor_path_sentinel_key_does_not_leak(): void {
-		if ( ! defined( 'PRV_OPENROUTER_API_KEY' ) ) {
-			define( 'PRV_OPENROUTER_API_KEY', 'sk-or-TEST-LEAK-CANARY' );
-		}
-
 		$GLOBALS['prv_test_state']['options']['prv_monthly_budget_usd']   = 5.0;
 		$GLOBALS['prv_test_state']['options']['prv_peptides']              = array( array( 'slug' => 'bpc-157', 'label' => 'BPC-157' ) );
 		$GLOBALS['prv_test_state']['options']['prv_prompt_intents']        = array( 'what is {peptide}' );
@@ -166,7 +163,7 @@ class CaptureWriterTest extends TestCase {
 		$all_io   = $GLOBALS['prv_test_state']['wpdb_call_io_rows'];
 		$all_json = wp_json_encode( $all_meta ) . wp_json_encode( $all_io );
 
-		$this->assertStringNotContainsString( 'sk-or-TEST-LEAK-CANARY', $all_json, 'Sentinel key does not appear in any stored row (executor path)' );
+		$this->assertStringNotContainsString( 'sk-or-test-key', $all_json, 'Configured key does not appear in any stored row (executor path)' );
 		$this->assertStringNotContainsString( 'Bearer', $all_json, 'Bearer does not appear in any stored row (executor path)' );
 		$this->assertStringNotContainsString( 'Authorization', $all_json, 'Authorization does not appear in any stored row (executor path)' );
 		$this->assertGreaterThanOrEqual( 1, count( $all_meta ), 'Executor path wrote at least one call_meta row on 401' );
