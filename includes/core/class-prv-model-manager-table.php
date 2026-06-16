@@ -138,9 +138,9 @@ class PRV_Model_Manager_Table {
 	 * @return string HTML badge (pre-escaped).
 	 */
 	private function render_health_badge( array $m ): string {
-		$status  = (string) ( $m['health_status'] ?? 'unknown' );
-		$probed  = (int) ( $m['health_probed'] ?? 0 );
-		$errors  = (int) ( $m['health_errors'] ?? 0 );
+		$status = (string) ( $m['health_status'] ?? 'unknown' );
+		$probed = (int) ( $m['health_probed'] ?? 0 );
+		$errors = (int) ( $m['health_errors'] ?? 0 );
 
 		switch ( $status ) {
 			case 'healthy':

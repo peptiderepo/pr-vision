@@ -157,11 +157,11 @@ class PRV_Probe_Run_Executor {
 			// phpcs:disable WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine, Universal.WhiteSpace.CommaSpacing.TooMuchSpaceAfter
 			$cid = $this->capture->write_meta(
 				array(
-					'visibility_row' => null,            'run_id'         => $run_id,
-					'peptide_slug'   => $peptide['slug'], 'model'         => $model,
-					'intent_label'   => $intent_tpl,     'tokens_in'     => null,
-					'tokens_out'     => null,            'cost_usd'      => 0.0,
-					'latency_ms'     => $latency_ms,     'cited'         => null,
+					'visibility_row' => null,            'run_id' => $run_id,
+					'peptide_slug'   => $peptide['slug'], 'model' => $model,
+					'intent_label'   => $intent_tpl,     'tokens_in' => null,
+					'tokens_out'     => null,            'cost_usd' => 0.0,
+					'latency_ms'     => $latency_ms,     'cited' => null,
 					'http_status'    => $http_status,    'config_version' => $config_ver,
 				)
 			); // phpcs:enable
@@ -184,11 +184,11 @@ class PRV_Probe_Run_Executor {
 		// phpcs:disable WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine, Universal.WhiteSpace.CommaSpacing.TooMuchSpaceAfter
 		$cid = $this->capture->write_meta(
 			array(
-				'visibility_row' => $row_id > 0 ? $row_id : null, 'run_id'    => $run_id,
-				'peptide_slug'   => $peptide['slug'],             'model'      => $model,
-				'intent_label'   => $intent_tpl,     'tokens_in'  => $result->get_tokens_in(),
-				'tokens_out'     => $result->get_tokens_out(),    'cost_usd'  => $result->get_cost_usd(),
-				'latency_ms'     => $latency_ms,     'cited'      => $result->is_cited() ? 1 : 0,
+				'visibility_row' => $row_id > 0 ? $row_id : null, 'run_id' => $run_id,
+				'peptide_slug'   => $peptide['slug'],             'model' => $model,
+				'intent_label'   => $intent_tpl,     'tokens_in' => $result->get_tokens_in(),
+				'tokens_out'     => $result->get_tokens_out(),    'cost_usd' => $result->get_cost_usd(),
+				'latency_ms'     => $latency_ms,     'cited' => $result->is_cited() ? 1 : 0,
 				'http_status'    => $http_status,    'config_version' => $config_ver,
 			)
 		); // phpcs:enable

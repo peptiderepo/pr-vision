@@ -44,9 +44,9 @@ class PRV_Costs_Renderer {
 		$level       = (string) $data['level'];
 		$offset      = (int) $data['offset'];
 
-		$meter_pct       = $cap > 0 ? min( 100, round( ( $mtd_cost / $cap ) * 100 ) ) : 0;
-		$meter_class     = $meter_pct >= 90 ? ' prv-meter--capped' : '';
-		$projected_warn  = $projected > $cap;
+		$meter_pct      = $cap > 0 ? min( 100, round( ( $mtd_cost / $cap ) * 100 ) ) : 0;
+		$meter_class    = $meter_pct >= 90 ? ' prv-meter--capped' : '';
+		$projected_warn = $projected > $cap;
 
 		echo '<div class="wrap prv-page-wrap">';
 		$this->render_subnav( 'costs' );
@@ -139,10 +139,10 @@ class PRV_Costs_Renderer {
 		);
 		echo '<nav class="prv-subnav" aria-label="' . esc_attr__( 'PR Vision navigation', 'pr-vision' ) . '">';
 		foreach ( $tabs as $key => $tab ) {
-			$is_active   = ( $key === $active );
+			$is_active    = ( $key === $active );
 			$aria_current = $is_active ? ' aria-current="page"' : '';
-			$tab_class   = 'prv-subnav-tab' . ( $is_active ? ' prv-subnav-tab--active' : '' );
-			$url         = admin_url( 'admin.php?page=' . rawurlencode( $tab['slug'] ) );
+			$tab_class    = 'prv-subnav-tab' . ( $is_active ? ' prv-subnav-tab--active' : '' );
+			$url          = admin_url( 'admin.php?page=' . rawurlencode( $tab['slug'] ) );
 			echo '<a href="' . esc_url( $url ) . '" class="' . esc_attr( $tab_class ) . '"' . $aria_current . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- aria-current is safe static string
 			echo esc_html( $tab['label'] );
 			echo '</a>';

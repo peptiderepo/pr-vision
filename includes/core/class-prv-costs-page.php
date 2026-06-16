@@ -75,14 +75,14 @@ class PRV_Costs_Page {
 
 		// Drill-down parameters.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$level  = isset( $_GET['prv_level'] ) ? sanitize_text_field( wp_unslash( $_GET['prv_level'] ) ) : 'run';
+		$level = isset( $_GET['prv_level'] ) ? sanitize_text_field( wp_unslash( $_GET['prv_level'] ) ) : 'run';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$offset = isset( $_GET['prv_offset'] ) ? absint( wp_unslash( $_GET['prv_offset'] ) ) : 0;
 		$drill  = $query->get_drill_down( $level, $offset );
 
-		$cap        = PRV_Config::get_monthly_budget_usd();
-		$mtd_cost   = $summary['total_cost'];
-		$projected  = $query->project_month_end( $mtd_cost );
+		$cap       = PRV_Config::get_monthly_budget_usd();
+		$mtd_cost  = $summary['total_cost'];
+		$projected = $query->project_month_end( $mtd_cost );
 
 		$renderer = new PRV_Costs_Renderer();
 		$renderer->render(

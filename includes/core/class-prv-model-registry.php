@@ -212,7 +212,7 @@ class PRV_Model_Registry {
 			if ( ! isset( $outcomes[ $slug ] ) ) {
 				continue;
 			}
-			$o = $outcomes[ $slug ];
+			$o                  = $outcomes[ $slug ];
 			$m['health_probed'] = (int) $o['probed'];
 			$m['health_errors'] = (int) $o['errors'];
 			$m['health_run_id'] = $run_id;

@@ -117,7 +117,7 @@ class PRV_Ai_Visibility_Collector implements PRV_Data_Collector {
 
 		$standings = array();
 		foreach ( (array) $standing_rows as $row ) {
-			$top_domains = $this->extract_top_domains( (string) ( $row['domains_json_list'] ?? '' ) );
+			$top_domains                                = $this->extract_top_domains( (string) ( $row['domains_json_list'] ?? '' ) );
 			$standings[ (string) $row['peptide_slug'] ] = array(
 				'label'        => (string) $row['peptide_label'],
 				'cited'        => (bool) (int) $row['cited'],

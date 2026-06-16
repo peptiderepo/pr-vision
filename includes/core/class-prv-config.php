@@ -124,16 +124,16 @@ class PRV_Config {
 		$per_probe = 0.005;
 		$per_run   = round( $probe_count * $per_probe, 4 );
 
-		$cadence          = self::get_cadence();
-		$runs_per_month   = 'weekly' === $cadence ? 4 : ( 'daily' === $cadence ? 30 : 8 );
-		$per_month        = round( $per_run * $runs_per_month, 4 );
-		$cap              = self::get_monthly_budget_usd();
+		$cadence        = self::get_cadence();
+		$runs_per_month = 'weekly' === $cadence ? 4 : ( 'daily' === $cadence ? 30 : 8 );
+		$per_month      = round( $per_run * $runs_per_month, 4 );
+		$cap            = self::get_monthly_budget_usd();
 
 		return array(
-			'per_run_usd'  => $per_run,
+			'per_run_usd'   => $per_run,
 			'per_month_usd' => $per_month,
-			'probe_count'  => $probe_count,
-			'over_cap'     => $per_month > $cap,
+			'probe_count'   => $probe_count,
+			'over_cap'      => $per_month > $cap,
 		);
 	}
 

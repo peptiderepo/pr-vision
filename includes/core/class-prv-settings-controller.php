@@ -72,7 +72,7 @@ class PRV_Settings_Controller {
 		$old_cadence = PRV_Config::get_cadence();
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified above.
-		$budget  = isset( $_POST['prv_monthly_budget_usd'] )
+		$budget = isset( $_POST['prv_monthly_budget_usd'] )
 			? max( 0.01, (float) sanitize_text_field( wp_unslash( (string) $_POST['prv_monthly_budget_usd'] ) ) )
 			: PRV_DEFAULT_MONTHLY_BUDGET_USD;
 		update_option( 'prv_monthly_budget_usd', $budget );
@@ -85,7 +85,7 @@ class PRV_Settings_Controller {
 		$cadence_raw = isset( $_POST['prv_cadence'] )
 			? sanitize_text_field( wp_unslash( (string) $_POST['prv_cadence'] ) )
 			: 'weekly';
-		$cadence = in_array( $cadence_raw, array( 'weekly', 'daily', 'twicedaily' ), true ) ? $cadence_raw : 'weekly';
+		$cadence     = in_array( $cadence_raw, array( 'weekly', 'daily', 'twicedaily' ), true ) ? $cadence_raw : 'weekly';
 		update_option( PRV_Config::CADENCE_KEY, $cadence );
 
 		if ( ! empty( $_POST['prv_peptides_json'] ) ) {
@@ -153,8 +153,8 @@ class PRV_Settings_Controller {
 		$result_arg = 'prv_key_unchanged';
 
 		if ( '' !== $raw_key ) {
-			$stored      = PRV_Key_Store::store_key( $raw_key );
-			$result_arg  = $stored ? 'prv_key_set' : 'prv_key_error';
+			$stored     = PRV_Key_Store::store_key( $raw_key );
+			$result_arg = $stored ? 'prv_key_set' : 'prv_key_error';
 			// Explicitly unset to prevent the plaintext lingering in memory.
 			unset( $raw_key );
 		}
@@ -162,8 +162,8 @@ class PRV_Settings_Controller {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'       => self::MENU_SLUG,
-					$result_arg  => 1,
+					'page'      => self::MENU_SLUG,
+					$result_arg => 1,
 				),
 				admin_url( 'admin.php' )
 			)

@@ -73,19 +73,19 @@ class PRV_Call_Drawer_Renderer {
 	 * @return void
 	 */
 	public function render_content( array $meta, ?array $io ): void {
-		$id         = (int) $meta['id'];
-		$captured   = (string) $meta['captured_at'];
-		$peptide    = (string) $meta['peptide_slug'];
-		$model      = (string) $meta['model'];
-		$intent     = (string) $meta['intent_label'];
+		$id          = (int) $meta['id'];
+		$captured    = (string) $meta['captured_at'];
+		$peptide     = (string) $meta['peptide_slug'];
+		$model       = (string) $meta['model'];
+		$intent      = (string) $meta['intent_label'];
 		$http_status = (int) ( $meta['http_status'] ?? 200 );
-		$is_error   = $http_status >= 400;
-		$cited      = isset( $meta['cited'] ) ? $meta['cited'] : null;
-		$tok_in     = isset( $meta['tokens_in'] ) ? (int) $meta['tokens_in'] : null;
-		$tok_out    = isset( $meta['tokens_out'] ) ? (int) $meta['tokens_out'] : null;
-		$latency_ms = isset( $meta['latency_ms'] ) ? (int) $meta['latency_ms'] : null;
-		$cost_usd   = (float) ( $meta['cost_usd'] ?? 0.0 );
-		$run_id     = (string) ( $meta['run_id'] ?? '' );
+		$is_error    = $http_status >= 400;
+		$cited       = isset( $meta['cited'] ) ? $meta['cited'] : null;
+		$tok_in      = isset( $meta['tokens_in'] ) ? (int) $meta['tokens_in'] : null;
+		$tok_out     = isset( $meta['tokens_out'] ) ? (int) $meta['tokens_out'] : null;
+		$latency_ms  = isset( $meta['latency_ms'] ) ? (int) $meta['latency_ms'] : null;
+		$cost_usd    = (float) ( $meta['cost_usd'] ?? 0.0 );
+		$run_id      = (string) ( $meta['run_id'] ?? '' );
 		$config_ver  = isset( $meta['config_version'] ) ? (int) $meta['config_version'] : null;
 		$io_captured = isset( $meta['io_captured'] ) ? (int) $meta['io_captured'] : 0;
 
@@ -93,7 +93,7 @@ class PRV_Call_Drawer_Renderer {
 		// io_captured = 1 AND io row present  → Normal.
 		// io_captured = 1 AND io row absent   → Pruned (aged out by retention cron).
 		// io_captured = 0                     → Legacy / not captured (pre-feature row).
-		$has_io      = ( null !== $io );
+		$has_io       = ( null !== $io );
 		$vis_row_null = empty( $meta['visibility_row'] );
 		if ( ! $is_error ) {
 			$is_legacy = ( 0 === $io_captured );

@@ -119,7 +119,7 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 
 		foreach ( $standings as $row ) {
 			if ( ! empty( $row['cited'] ) ) {
-				$cited_count++;
+				++$cited_count;
 			}
 		}
 
@@ -206,9 +206,9 @@ class PRV_Ai_Visibility_Panel implements PRV_Dashboard_Panel {
 		foreach ( $last_run_counts as $model ) {
 			$status = (string) ( $model['health_status'] ?? 'unknown' );
 			if ( 'retired' === $status ) {
-				$retired_count++;
+				++$retired_count;
 			} elseif ( 'healthy' === $status ) {
-				$healthy_count++;
+				++$healthy_count;
 			}
 		}
 

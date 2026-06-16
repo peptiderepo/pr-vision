@@ -152,7 +152,7 @@ class PRV_Config_Version {
 	 * @return int The new version number.
 	 */
 	private static function create_version_record(): int {
-		$versions   = get_option( self::VERSIONS_KEY, array() );
+		$versions = get_option( self::VERSIONS_KEY, array() );
 		if ( ! is_array( $versions ) ) {
 			$versions = array();
 		}

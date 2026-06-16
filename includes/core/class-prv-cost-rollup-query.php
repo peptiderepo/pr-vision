@@ -99,12 +99,12 @@ class PRV_Cost_Rollup_Query {
 
 		$result = array();
 		foreach ( (array) $rows as $row ) {
-			$calls         = (int) $row['calls'];
-			$mtd_cost      = (float) $row['mtd_cost'];
-			$result[]      = array(
-				'model'        => (string) $row['model'],
-				'calls'        => $calls,
-				'mtd_cost'     => $mtd_cost,
+			$calls    = (int) $row['calls'];
+			$mtd_cost = (float) $row['mtd_cost'];
+			$result[] = array(
+				'model'         => (string) $row['model'],
+				'calls'         => $calls,
+				'mtd_cost'      => $mtd_cost,
 				'cost_per_call' => $calls > 0 ? $mtd_cost / $calls : 0.0,
 			);
 		}
@@ -193,8 +193,8 @@ class PRV_Cost_Rollup_Query {
 	 * @return float Projected full-month cost.
 	 */
 	public function project_month_end( float $mtd_cost ): float {
-		$days_in_month  = (int) gmdate( 't' );
-		$day_of_month   = (int) gmdate( 'j' );
+		$days_in_month = (int) gmdate( 't' );
+		$day_of_month  = (int) gmdate( 'j' );
 
 		if ( $day_of_month < 1 ) {
 			return $mtd_cost;

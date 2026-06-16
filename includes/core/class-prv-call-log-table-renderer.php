@@ -133,10 +133,10 @@ class PRV_Call_Log_Table_Renderer {
 
 		// Status filter.
 		$status_opts = array(
-			''         => __( 'All statuses', 'pr-vision' ),
-			'cited'    => __( 'Cited', 'pr-vision' ),
+			''          => __( 'All statuses', 'pr-vision' ),
+			'cited'     => __( 'Cited', 'pr-vision' ),
 			'not_cited' => __( 'Not cited', 'pr-vision' ),
-			'error'    => __( 'Error', 'pr-vision' ),
+			'error'     => __( 'Error', 'pr-vision' ),
 		);
 		echo '<label for="prv-f-status" class="prv-sr-only">' . esc_html__( 'Status', 'pr-vision' ) . '</label>';
 		echo '<select id="prv-f-status" name="prv_filter_status" class="prv-filter-select">';
@@ -180,12 +180,12 @@ class PRV_Call_Log_Table_Renderer {
 		}
 
 		foreach ( $rows as $row ) {
-			$id          = (int) $row['id'];
-			$is_error    = ( (int) $row['http_status'] >= 400 );
-			$cited_null  = ( null === $row['cited'] );
-			$is_cited    = ! $cited_null && (bool) $row['cited'];
-			$latency_ms  = isset( $row['latency_ms'] ) ? (int) $row['latency_ms'] : null;
-			$lat_warn    = ( null !== $latency_ms && $latency_ms > 8000 ) ? ' style="color:#FFB36E"' : '';
+			$id         = (int) $row['id'];
+			$is_error   = ( (int) $row['http_status'] >= 400 );
+			$cited_null = ( null === $row['cited'] );
+			$is_cited   = ! $cited_null && (bool) $row['cited'];
+			$latency_ms = isset( $row['latency_ms'] ) ? (int) $row['latency_ms'] : null;
+			$lat_warn   = ( null !== $latency_ms && $latency_ms > 8000 ) ? ' style="color:#FFB36E"' : '';
 
 			$status_chip = $is_error ? '<span class="prv-chip prv-chip--error">&#x2715; Error</span>' : '<span class="prv-chip prv-chip--ok">OK</span>';
 
