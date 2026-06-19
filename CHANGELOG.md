@@ -7,6 +7,44 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [0.3.3] — 2026-06-19
+
+P1 security fix: write-only key invariant — remove key-format prefix from placeholder.
+
+### Fixed
+- **[SECURITY] P1 — API-key input placeholder leaked provider prefix in rendered HTML.**
+  `class-prv-key-manager-renderer.php` rendered `placeholder="sk-or-…"` on the
+  password input. The placeholder contained the literal string `sk-or-` which (a)
+  exposes provider-format information to anyone who can view page source, and (b)
+  caused the `not.toContain('sk-or-')` smoke-suite assertion to fail (confirmed in
+  CI run on 2026-06-17, job 81824705096). The placeholder is now `Paste provider API
+  key` — neutral, no key-format prefix, no provider information. The `value=""` write-
+  only invariant was already correct; this fixes the remaining output surface.
+- Added inline comment and docblock note: placeholder text must never contain a
+  key-format prefix — even a format hint in a placeholder violates the write-only
+  contract and trips smoke-suite security guards.
+
+### Audit
+Full-codebase audit performed (2026-06-19):
+- `class-prv-settings-renderer.php` — no key emission; clean.
+- `class-prv-key-manager-renderer.php` — placeholder was the sole leak; now fixed.
+- `class-prv-model-manager-table.php` — no key fields; clean.
+- `class-prv-settings-controller.php` — processes POST input; never reflects back.
+- `class-prv-key-store.php` — `get_key()` used server-side only; never echoed.
+- `class-prv-crypto-helper.php` — encrypt/decrypt helper; no HTML output.
+- `class-prv-key-test-ajax.php` — AJAX; returns valid/invalid message, never the key.
+- `class-prv-model-test-ajax.php` — AJAX; returns model health, never the key.
+- `class-prv-gateway-client.php` — HTTP client; key only in Authorization header.
+- `class-prv-probe-run-executor.php` — `error_log()` only logs HTTP status, not the key.
+- `class-prv-capture-writer.php` — allowlisted fields; no key fields.
+- `class-prv-call-drawer-renderer.php` / `class-prv-call-log-*` — no key fields.
+- All providers — `get_key()` only flows to HTTP Authorization header.
+- No `wp_localize_script` calls anywhere in the plugin.
+- No REST endpoints registered; no REST response surfaces.
+- No data attributes containing key fields.
+
+---
+
 ## [0.3.2] — 2026-06-16
 
 CI/CD adoption: PHPUnit test suite (WP stubs), estate reusable pipeline,

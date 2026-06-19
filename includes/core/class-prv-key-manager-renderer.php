@@ -12,7 +12,10 @@ declare(strict_types=1);
  *
  * Outputs only the key SOURCE (constant / admin / not set) and the
  * last-run API status. The stored key value is NEVER included in any
- * output: not in HTML, not in JS, not in data attributes.
+ * output: not in HTML, not in JS, not in data attributes. The password
+ * input placeholder must also never contain a key format prefix (e.g.
+ * 'sk-or-') — even a format hint in the placeholder leaks provider
+ * information and trips write-only security guards.
  *
  * Three states:
  *  - SOURCE_CONSTANT: constant defined → lock the input, show note.
@@ -120,10 +123,13 @@ class PRV_Key_Manager_Renderer {
 		echo '</label>';
 
 		// Input always renders empty — never outputs stored key.
+		// Placeholder must not include a key-format prefix (e.g. 'sk-or-');
+		// even a format hint leaks provider information and will trip
+		// write-only security assertions in the smoke suite.
 		echo '<input type="password" id="prv_api_key" name="prv_api_key" '
 			. 'class="prv-input" style="max-width:420px" '
 			. 'value="" autocomplete="new-password" '
-			. 'placeholder="' . esc_attr( $is_const ? __( 'Managed via wp-config — cannot override', 'pr-vision' ) : __( 'sk-or-…', 'pr-vision' ) ) . '"'
+			. 'placeholder="' . esc_attr( $is_const ? __( 'Managed via wp-config — cannot override', 'pr-vision' ) : __( 'Paste provider API key', 'pr-vision' ) ) . '"'
 			. ( $is_const ? ' disabled aria-disabled="true"' : '' ) . '>';
 
 		if ( $is_const ) {
